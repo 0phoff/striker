@@ -1,9 +1,10 @@
 import striker
+striker.core.HookParent.__hook_check__ = 'raise'
 
 
 def test_api():
     """ Test general hook usage API """
-    class Parent(striker.core.hook.HookParent, hook_types=['a', 'b', 'c']):
+    class Parent(striker.core.HookParent, hook_types={'a', 'b', 'c'}):
         def __init__(self):
             self.hooks.check()
 
@@ -53,10 +54,10 @@ def test_api():
 
 def test_runtime():
     """ Test that hooks defined at runtime work and are correctly bound """
-    class Parent(striker.core.hook.HookParent, hook_types={'a', 'b'}):
+    class Parent(striker.core.HookParent, hook_types={'a', 'b'}):
         def __init__(self):
             self.hooks.check()
-            
+
             self.value_a = 0
             self.value_b = 0
             self.hooks.a(self.test_hook_1)
@@ -95,7 +96,7 @@ def test_runtime():
 
 def test_disable():
     """ Test that disabling a hook works correctly """
-    class Parent(striker.core.hook.HookParent, hook_types=['a']):
+    class Parent(striker.core.HookParent, hook_types={'a'}):
         def __init__(self):
             self.hooks.check()
             self.value = 0
@@ -123,7 +124,7 @@ def test_disable():
 
 def test_multiple_parents():
     """ Test that multiple parent instances work correctly """
-    class Parent(striker.core.hook.HookParent, hook_types=['a']):
+    class Parent(striker.core.HookParent, hook_types={'a'}):
         def __init__(self):
             self.hooks.check()
             self.value = 0
@@ -150,7 +151,7 @@ def test_multiple_parents():
 
 def test_parent_inheritance():
     """ Test that inheritance works for parent classes """
-    class Parent(striker.core.hook.HookParent, hook_types=['a']):
+    class Parent(striker.core.HookParent, hook_types={'a'}):
         def __init__(self):
             self.hooks.check()
             self.value_parent = 0
@@ -163,7 +164,7 @@ def test_parent_inheritance():
             self.hooks.run(type='a')
             self.hooks.run(type='a')
 
-    class Child(Parent, hook_types=['b']):
+    class Child(Parent, hook_types={'b'}):
         def __init__(self):
             super().__init__()
             self.value_child_a = 0
@@ -191,3 +192,28 @@ def test_parent_inheritance():
     assert c.value_parent == 2
     assert c.value_child_a == 2
     assert c.value_child_b == 1
+
+
+def test_global_hook_type():
+    """ Test that you can pass a global hook_type set """
+    class Parent(striker.core.HookParent):
+        @striker.hooks.a
+        def hook_a(self):
+            self.value_a += 1
+
+        def hook_a_bis(self):
+            self.value_a += 2
+
+        def __init__(self):
+            self.TYPES = set('a')
+            self.hooks.check(self.TYPES)
+            self.value_a = 0
+
+            self.hooks.a[5](self.hook_a_bis)
+
+        def run(self):
+            self.hooks.run(type='a', index=1)
+            assert self.value_a == 1
+
+            self.hooks.run(type='a', index='5')
+            assert self.value_a == 4

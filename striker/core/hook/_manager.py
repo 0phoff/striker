@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 from collections import defaultdict
 from itertools import chain
 import logging
-from .._weakref import OptionalRef
+from .._weakref import OptionalRef, EnsuredWeakRef
 from ._hook import HookDecorator, Hook
 
 __all__ = ['HookManager']
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 class HookManager:
     def __init__(self, parent: HookParent):
-        self.__parent: OptionalRef[HookParent] = OptionalRef(parent)
+        self.__parent: EnsuredWeakRef[HookParent] = EnsuredWeakRef(parent)
         self.__types: OptionalRef[Sequence[str]] = OptionalRef(None)
         self.__check: bool = False
         self.__hooks: dict[str, set[Hook]] = defaultdict(set)
@@ -65,13 +65,13 @@ class HookManager:
         if hook_type_check == 'none':
             return
 
-        types = self.__types.ref or self.__parent.ref.__hook_types__
+        check_types = self.__types.ref or self.__parent.ref.__hook_types__
         for hook in chain(*self.__hooks.values()):
-            if hook.type not in types:
+            if hook.type not in check_types:
                 if hook_type_check == 'log':
-                    log.error('Unregistered hook type "{hook.type}" in "{self.__parent().__class__.__name__}"')
+                    log.error(f'Unregistered hook type "{hook.type}" in "{self.__parent.ref.__class__.__name__}"')
                 elif hook_type_check == 'raise':
-                    raise TypeError('Unregistered hook type "{hook.type}" in "{self.__parent().__class__.__name__}"')
+                    raise TypeError(f'Unregistered hook type "{hook.type}" in "{self.__parent.ref.__class__.__name__}"')
 
     def __getattr__(self, name: str) -> HookDecorator:
         hook_type_check = self.__parent.ref.__hook_check__
@@ -79,8 +79,8 @@ class HookManager:
             types = self.__types.ref or self.__parent.ref.__hook_types__
             if name not in types:
                 if hook_type_check == 'log':
-                    log.error('Unregistered hook type "{name}" in "{self.__parent().__class__.__name__}"')
+                    log.error(f'Unregistered hook type "{name}" in "{self.__parent.ref.__class__.__name__}"')
                 elif hook_type_check == 'raise':
-                    raise TypeError('Unregistered hook type "{name}" in "{self.__parent().__class__.__name__}"')
+                    raise TypeError(f'Unregistered hook type "{name}" in "{self.__parent.ref.__class__.__name__}"')
 
         return HookDecorator(name, self.__parent.ref)

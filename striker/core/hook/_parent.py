@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from ._manager import HookManager
 
@@ -33,10 +33,11 @@ class HookParent():
         ...     def hook_a_bis(self):
         ...         pass
         ...
-        ...     def run(self):
+        ...     def __init__(self):
         ...         # Recommended: Check thath there are only valid hooks
         ...         self.hooks.check()
         ...
+        ...     def run(self):
         ...         # Note that we are creating hooks on the fly on the instance and not on the class (self.hooks)
         ...         self.hooks.a[0:10](self.hook_a_bis)
         ...
@@ -47,15 +48,15 @@ class HookParent():
     """
     hooks: HookManager
     __hook_check__: Literal['none', 'log', 'raise'] = 'log'
-    __hook_types__: set[str] = ()
+    __hook_types__: set[str] = set()
 
     def __init_subclass__(cls, hook_types: Optional[Union[set[str], str]] = None) -> None:
         if isinstance(hook_types, str):
-            cls.__hook_types__ = {hook_types}
+            cls.__hook_types__ = {*cls.__hook_types__, hook_types}
         elif hook_types is not None:
-            cls.__hook_types__ = set(hook_types)
+            cls.__hook_types__ = {*cls.__hook_types__, *hook_types}
 
-    def __new__(cls) -> HookParent:
+    def __new__(cls, *args: Any, **kwargs: Any) -> HookParent:
         """ Attah a `hook` HookManager object to the instance. """
         obj = super().__new__(cls)
         obj.hooks = HookManager(obj)
