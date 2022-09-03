@@ -1,7 +1,7 @@
 from typing import Callable, Generic, TypeVar, Optional, Union, cast
 import weakref
 
-__all__ = ['OptionalRef', 'EnsuredWeakRef']
+__all__ = ['OptionalRef', 'PersistentWeakRef']
 T = TypeVar('T', bound=object)
 
 
@@ -33,7 +33,13 @@ class OptionalRef(Generic[T]):
             return f'<OptionalRef at {hex(id(self))}; to "None">'
 
 
-class EnsuredWeakRef(Generic[T]):
+class PersistentWeakRef(Generic[T]):
+    """
+    WeakRef an object for which you now it will always exist.
+
+    The biggest usecase is for storing a weakref to a parent object (child cannot outlive parent).
+    This is very similar to a weakref.proxy, but it doesn't raise an error (be carefull) and the actual object is returned through ``.ref``
+    """
     def __init__(self, obj: T):
         self.__object = weakref.ref(obj)
 

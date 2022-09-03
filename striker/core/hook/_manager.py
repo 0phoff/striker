@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 from collections import defaultdict
 from itertools import chain
 import logging
-from .._weakref import OptionalRef, EnsuredWeakRef
+from .._weakref import OptionalRef, PersistentWeakRef
 from ._hook import HookDecorator, Hook
 
 __all__ = ['HookManager']
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 class HookManager:
     def __init__(self, parent: HookParent):
-        self.__parent: EnsuredWeakRef[HookParent] = EnsuredWeakRef(parent)
+        self.__parent: PersistentWeakRef[HookParent] = PersistentWeakRef(parent)
         self.__types: OptionalRef[Sequence[str]] = OptionalRef(None)
         self.__check: bool = False
         self.__hooks: dict[str, set[Hook]] = defaultdict(set)
