@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 class HookManager:
     def __init__(self, parent: HookParent):
         self.__parent: PersistentWeakRef[HookParent] = PersistentWeakRef(parent)
-        self.__types: OptionalRef[Sequence[str]] = OptionalRef(None)
+        self.__types: OptionalRef[set[str]] = OptionalRef(None)
         self.__check: bool = False
         self.__hooks: dict[str, set[Hook]] = defaultdict(set)
 
@@ -56,7 +56,7 @@ class HookManager:
     def register(self, hook: Hook) -> None:
         self.__hooks[hook.type].add(hook)
 
-    def check(self, types: Optional[Sequence[str]] = None) -> None:
+    def check(self, types: Optional[set[str]] = None) -> None:
         self.__check = True
         if types is not None:
             self.__types.ref = types

@@ -29,7 +29,7 @@ class PluginManager:
             if plugin.enabled:
                 plugin.hooks.run(type=type, index=index, args=args, kwargs=kwargs)
 
-    def check(self, types: Optional[Sequence[str]] = None) -> None:
+    def check(self, types: Optional[set[str]] = None) -> None:
         for plugin in self.__plugins:
             plugin.hooks.check(types)
 
