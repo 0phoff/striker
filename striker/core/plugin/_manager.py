@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Sequence, Optional, Any, Union, cast
+from typing import TYPE_CHECKING, Iterator, Sequence, Optional, Any, Union, cast
 if TYPE_CHECKING:
     from ._parent import PluginParent
 
@@ -8,10 +8,8 @@ from ._plugin import Plugin
 
 
 class PluginManager:
-    __plugins: tuple[Plugin, ...]
-
     def __init__(self, parent: PluginParent):
-        self.__plugins = tuple(
+        self.__plugins: tuple[Plugin, ...] = tuple(
             cast(Plugin, plugin.bind(parent))
             for cls in inspect.getmro(parent.__class__)[::-1]
             for plugin in getattr(cls, 'plugins', [])
@@ -45,6 +43,9 @@ class PluginManager:
             return self.__plugins[names.index(index)]
         else:
             return self.__plugins[index]
+
+    def __iter__(self) -> Iterator[Plugin]:
+        return iter(self.__plugins)
 
     @staticmethod
     def get_name(item: Any) -> Optional[str]:
