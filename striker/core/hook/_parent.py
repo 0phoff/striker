@@ -50,7 +50,11 @@ class HookParent():
     __hook_check__: Literal['none', 'log', 'raise'] = 'log'
     __hook_types__: set[str] = set()
 
-    def __init_subclass__(cls, hook_types: Optional[Union[set[str], str]] = None) -> None:
+    def __init_subclass__(
+        cls,
+        /,
+        hook_types: Optional[Union[set[str], str]] = None,
+    ) -> None:
         if isinstance(hook_types, str):
             cls.__hook_types__ = {*cls.__hook_types__, hook_types}
         elif hook_types is not None:
