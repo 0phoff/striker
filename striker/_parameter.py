@@ -197,9 +197,9 @@ class Parameters:
             current = getattr(self, k, None)
             if hasattr(current, 'load_state_dict'):
                 try:
-                    current.load_state_dict(v, strict=strict)   # type: ignore
+                    current.load_state_dict(v, strict=strict)   # type: ignore[union-attr]
                 except TypeError:
-                    current.load_state_dict(v)                  # type: ignore
+                    current.load_state_dict(v)                  # type: ignore[union-attr]
             else:
                 setattr(self, k, v)
 
