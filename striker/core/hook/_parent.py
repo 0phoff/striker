@@ -6,7 +6,7 @@ from ._manager import HookManager
 __all__ = ['HookParent']
 
 
-class HookParent():
+class HookParent:
     """
     Any class that wants to use hooks needs to subclass :class:`~striker.core.hook.HookParent`.
 
@@ -54,7 +54,10 @@ class HookParent():
         cls,
         /,
         hook_types: Optional[Union[set[str], str]] = None,
+        **kwargs: Any,
     ) -> None:
+        super().__init_subclass__(**kwargs)
+
         if isinstance(hook_types, str):
             cls.__hook_types__ = {*cls.__hook_types__, hook_types}
         elif hook_types is not None:

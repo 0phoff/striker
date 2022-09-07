@@ -1,10 +1,17 @@
+from typing import Protocol
+
+import pytest
 import striker
 striker.core.HookParent.__hook_check__ = 'raise'
 
 
 def test_api():
     """ Test general mixin API """
-    class CustomMixin(striker.core.mixin.Mixin, hook_types={'a'}, parent_hasattr={'ab'}, parent_dir={'cd'}):
+    class ParentProtocol(Protocol):
+        value: int
+        cd: int
+
+    class CustomMixin(striker.core.Mixin, hook_types={'a'}, parent_protocol=ParentProtocol):
         def __init__(self):
             self.value = 0
 
@@ -19,8 +26,8 @@ def test_api():
         custom_mixin = CustomMixin()
 
         def __init__(self):
-            self.mixins.check()
             self.value = 0
+            self.mixins.check()
 
         def __getattr__(self, name):
             if name == 'ab':
@@ -41,9 +48,27 @@ def test_api():
     p.run()
 
 
+def test_protocol_fail():
+    """ Test that the code raises an error when protocol is not matched. """
+    class ParentProtocol(Protocol):
+        doesnotexist: float
+
+    class CustomMixin(striker.core.Mixin, parent_protocol=ParentProtocol):
+        pass
+
+    class Parent(striker.core.MixinParent):
+        custom_mixin = CustomMixin()
+
+        def __init__(self):
+            self.mixins.check()
+
+    with pytest.raises(TypeError):
+        Parent()
+
+
 def test_multiple_parents():
     """ Test that plugins work correctly when multiple PluginParent instances are created """
-    class CustomMixin(striker.core.mixin.Mixin, hook_types={'a'}, parent_dir={'cd'}):
+    class CustomMixin(striker.core.Mixin, hook_types={'a'}):
         def __init__(self):
             self.value = 0
 
@@ -58,7 +83,6 @@ def test_multiple_parents():
         custom_mixin = CustomMixin()
 
         def __init__(self):
-            self.mixins.check()
             self.value = 0
 
         @property
@@ -92,7 +116,7 @@ def test_multiple_parents():
 
 def test_inheritance_mixin():
     """ Test that plugins work correctly when it is inherited """
-    class ParentMixin(striker.core.mixin.Mixin, hook_types={'a'}, parent_dir={'double'}):
+    class ParentMixin(striker.core.Mixin, hook_types={'a'}):
         def __init__(self):
             self.value = 0
 

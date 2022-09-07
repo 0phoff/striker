@@ -1,5 +1,5 @@
-from .hook import HookParent, Hook, hooks
-from .plugin import PluginParent, Plugin
-from .mixin import MixinParent
+from .hook import Hook, HookParent, hooks
+from .plugin import Plugin, PluginParent
+from .mixin import Mixin, MixinParent
 
-__all__ = ['HookParent', 'hooks', 'PluginParent', 'Plugin', 'MixinParent']
+__all__ = ['Hook', 'HookParent', 'hooks', 'Plugin', 'PluginParent', 'Mixin', 'MixinParent']

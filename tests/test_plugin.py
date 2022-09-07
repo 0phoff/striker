@@ -1,10 +1,16 @@
+from typing import Protocol
+
+import pytest
 import striker
 striker.core.HookParent.__hook_check__ = 'raise'
 
 
 def test_api():
     """ Test general plugin API """
-    class CustomPlugin(striker.core.Plugin, hook_types={'a', 'b'}):
+    class ParentProtocol(Protocol):
+        value: int
+
+    class CustomPlugin(striker.core.Plugin, hook_types={'a', 'b'}, parent_protocol=ParentProtocol):
         def __init__(self):
             self.value = 0
 
@@ -20,8 +26,8 @@ def test_api():
         plugins = [CustomPlugin()]
 
         def __init__(self):
-            self.plugins.check()
             self.value = 0
+            self.plugins.check()
 
         def run(self):
             self.plugins.run(type='a')
@@ -35,6 +41,24 @@ def test_api():
 
     # Plugin instance on class should still be untouched
     assert Parent.plugins[0].value == 0
+
+
+def test_protocol_fail():
+    """ Test that the code raises an error when protocol is not matched. """
+    class ParentProtocol(Protocol):
+        doesnotexist: float
+
+    class CustomPlugin(striker.core.Plugin, parent_protocol=ParentProtocol):
+        pass
+
+    class Parent(striker.core.PluginParent):
+        plugins = [CustomPlugin()]
+
+        def __init__(self):
+            self.plugins.check()
+
+    with pytest.raises(TypeError):
+        Parent()
 
 
 def test_disable():

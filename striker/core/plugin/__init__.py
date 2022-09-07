@@ -1,5 +1,3 @@
-from ._plugin import Plugin
-from ._parent import PluginParent
-from ._manager import PluginManager
+from ._plugin import Plugin, PluginParent, PluginManager
 
 __all__ = ['Plugin', 'PluginParent', 'PluginManager']
