@@ -1,0 +1,126 @@
+from typing import Iterator, Protocol, Optional, Any
+
+from torch.utils.data import DataLoader
+from torch import Tensor
+from ..core import LoopMixin, hooks
+
+__all__ = ['BatchTrainLoopMixin']
+
+
+class ParentProtocol(Protocol):
+    batch: int
+    """
+    Variable to keep track of the number of trained batches.
+
+    Note:
+        This variable gets automatically created on each :class:`~striker.Parameters` object and should thus not be manually cared for.
+    """
+
+    epoch: int
+    """
+    Variable to keep track of the number of trained epochs.
+
+    Note:
+        This variable gets automatically created on each :class:`~striker.Parameters` object and should thus not be manually cared for.
+    """
+
+    def forward(self, data: Any) -> Tensor:
+        """
+        Forward pass of the network.
+
+        Args:
+            data: data from the dataloader
+
+        Returns:
+            single loss value upon which we call ``backward()``
+        """
+
+    def optimize(self) -> None:
+        """
+        The optimization step of the training.
+        Usually you would call ``optimizer.step()`` and ``optimizer.zero_grad()`` here.
+        """
+
+    @hooks.train_epoch_start
+    def train_epoch_start(self, epoch: int) -> None:
+        """
+        Hook that gets called at the start of every epoch.
+
+        Args:
+            epoch: Number of the epoch we start.
+
+        Note:
+            The ``epoch`` argument is equal to ``self.epoch + 1``, as the ``self.epoch`` variable shows the number of completed epochs.
+        """
+
+    @hooks.train_epoch_end
+    def train_epoch_end(self, epoch: int) -> None:
+        """
+        Hook that gets called at the end of every epoch.
+
+        Args:
+            epoch: Number of the epoch we end.
+        """
+
+    @hooks.train_batch_start
+    def train_batch_start(self, batch: int) -> None:
+        """
+        Hook that gets called at the start of every batch.
+
+        Args:
+            batch: Number of the batch we start.
+
+        Note:
+            The ``batch`` argument is equal to ``self.batch + 1``, as the ``self.batch`` variable shows the number of completed batches.
+        """
+
+    @hooks.train_batch_end
+    def train_batch_end(self, batch: int, loss: Tensor) -> None:
+        """
+        Hook that gets called at the end of every batch.
+
+        Args:
+            batch: Number of the batch we end.
+            loss: Detached loss of the batch.
+        """
+
+    @hooks.data_batch
+    def data_batch(self, data: Any) -> None:
+        """
+        Hook that gets called with for every batch of data, before using it.
+        The difference with the :meth:`ParentProtocol.train_batch_start` hook is that we pass the data as an argument
+        and that most :class:`~striker.core.LoopMixin` provide this hook.
+
+        Args:
+            data: Batch of data from the dataloader.
+        """
+
+
+class BatchTrainLoopMixin(LoopMixin, protocol=ParentProtocol):
+    """
+    LoopMixin that trains a model on batches.
+    This is the default training LoopMixin.
+    """
+
+    @hooks.engine_start
+    def assert_name(self) -> None:
+        assert self.name == 'train', f'{self.__class__.__name__} can only be used for training'
+
+    def loop(self, dataloader: DataLoader[Any]) -> Optional[Iterator[None]]:
+        self.parent.run_hook(type='train_epoch_start', index=self.parent.epoch + 1, args=(self.parent.epoch + 1,))
+
+        for data in dataloader:
+            self.parent.run_hook(type='data_batch', args=(data,))
+            self.parent.run_hook(type='train_batch_start', index=self.parent.batch + 1, args=(self.parent.batch + 1))
+
+            loss = self.parent.forward(data)
+            loss.backward()
+            self.parent.optimize()
+
+            self.parent.batch += 1
+            self.parent.run_hook(type='train_batch_end', index=self.parent.batch, args=(self.parent.batch, loss.detach()))
+
+            yield
+
+        self.parent.epoch += 1
+        self.parent.run_hook(type='train_epoch_end', index=self.parent.epoch, args=(self.parent.epoch,))
