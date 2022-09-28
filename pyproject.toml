@@ -11,7 +11,7 @@ torch = [
     { markers = "sys_platform == 'win32'", url = "https://download.pytorch.org/whl/cu116/torch-1.12.1%2Bcu116-cp39-cp39-win_amd64.whl" },
 ]
 rich = { version = "~12.5", optional = true }
-rich-argparse = { version = "TODO", optional = true }
+rich-argparse = { version = "0.2.1", optional = true }
 typeguard = "^2.13.3"
 
 [tool.poetry.group.dev.dependencies]
