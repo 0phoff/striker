@@ -5,24 +5,33 @@ if TYPE_CHECKING:
     from ._parent import HookParent
 
 from collections import defaultdict
+from contextlib import suppress
 from itertools import chain
 import logging
-from .._weakref import OptionalRef, PersistentWeakRef
+
+with suppress(ImportError):
+    from rich import print
+
+from .._protocol import ProtocolChecker
+from .._weakref import PersistentWeakRef, OptionalRef
 from ._hook import HookDecorator, Hook
 
-__all__ = ['HookManager']
 log = logging.getLogger(__name__)
 
 
 class HookManager:
     def __init__(self, parent: HookParent):
         self.__parent: PersistentWeakRef[HookParent] = PersistentWeakRef(parent)
-        self.__types: OptionalRef[set[str]] = OptionalRef(None)
+        self.__protocol: OptionalRef[ProtocolChecker] = OptionalRef(None)
         self.__check: bool = False
         self.__hooks: dict[str, set[Hook]] = defaultdict(set)
 
         # Bind hooks
         for name in dir(parent):
+            # Skip known attributes (mainly for protocol, which is a computed property)
+            if name in {'__type_check__', '__protocol__', 'protocol'}:
+                continue
+
             try:
                 value = getattr(parent, name, None)
             except BaseException:
@@ -56,31 +65,37 @@ class HookManager:
     def register(self, hook: Hook) -> None:
         self.__hooks[hook.type].add(hook)
 
-    def check(self, types: Optional[set[str]] = None) -> None:
+    def check(self, protocol: Optional[ProtocolChecker] = None) -> None:
         self.__check = True
-        if types is not None:
-            self.__types.ref = types
+        if protocol is not None:
+            self.__protocol.ref = protocol
 
-        hook_type_check = self.__parent.ref.__hook_check__
+        hook_type_check = self.__parent.ref.__type_check__
         if hook_type_check == 'none':
             return
 
-        check_types = self.__types.ref or self.__parent.ref.__hook_types__
+        protocol_checker = self.__protocol.ref or self.__parent.ref.protocol
         for hook in chain(*self.__hooks.values()):
-            if hook.type not in check_types:
+            if not protocol_checker.check_hook_type(hook.type):
                 if hook_type_check == 'log':
                     log.error(f'Unregistered hook type "{hook.type}" in "{self.__parent.ref.__class__.__name__}"')
                 elif hook_type_check == 'raise':
+                    print(protocol_checker)
                     raise TypeError(f'Unregistered hook type "{hook.type}" in "{self.__parent.ref.__class__.__name__}"')
 
     def __getattr__(self, name: str) -> HookDecorator:
-        hook_type_check = self.__parent.ref.__hook_check__
+        hook_type_check = self.__parent.ref.__type_check__
         if self.__check and hook_type_check != 'none':
-            types = self.__types.ref or self.__parent.ref.__hook_types__
-            if name not in types:
+            protocol_checker = self.__protocol.ref or self.__parent.ref.protocol
+            if not protocol_checker.check_hook_type(name):
                 if hook_type_check == 'log':
-                    log.error(f'Unregistered hook type "{name}" in "{self.__parent.ref.__class__.__name__}"')
+                    log.error(f'Unregistered hook type "{name}" in <{self.__parent.ref.__class__.__name__}>')
                 elif hook_type_check == 'raise':
-                    raise TypeError(f'Unregistered hook type "{name}" in "{self.__parent.ref.__class__.__name__}"')
+                    print(protocol_checker)
+                    raise TypeError(f'Unregistered hook type "{name}" in <{self.__parent.ref.__class__.__name__}>')
 
         return HookDecorator(name, self.__parent.ref)
+
+    def __contains__(self, name: str) -> bool:
+        protocol_checker = self.__protocol.ref or self.__parent.ref.protocol
+        return protocol_checker.check_hook_type(name)

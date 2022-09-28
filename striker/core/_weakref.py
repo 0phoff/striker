@@ -1,7 +1,6 @@
 from typing import Callable, Generic, TypeVar, Optional, Union, cast
 import weakref
 
-__all__ = ['OptionalRef', 'PersistentWeakRef']
 T = TypeVar('T', bound=object)
 
 

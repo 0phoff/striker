@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Optional, Union, Any, cast
+from typing import TYPE_CHECKING, Callable, Optional, Union, Any
 if TYPE_CHECKING:
     from ._parent import HookParent
 
 from functools import update_wrapper
+import inspect
 from types import MethodType
 
 HookFunction = Union[MethodType, Callable[..., Any]]
@@ -27,7 +28,7 @@ class HookDecorator:
         )
         return self
 
-    def __call__(self, fn: Callable[[HookParent], None]) -> Hook:
+    def __call__(self, fn: Callable[..., None]) -> Hook:
         assert callable(fn), 'hooks should be used as decorators on HookParent methods'
         return Hook(self.type, self.indices, fn, self.parent)
 
@@ -53,16 +54,40 @@ class Hook:
         if parent is None:
             self.fn = fn
         else:
-            self.fn = MethodType(
-                cast(Callable[..., Any], fn.__func__ if isinstance(fn, MethodType) else fn),
-                parent,
-            )
+            if isinstance(fn, MethodType):
+                assert fn.__self__ == parent, 'Should rebind to same parent'
+                setattr(fn.__self__, fn.__name__, self)
+                self.fn = MethodType(fn.__func__, parent)
+            else:
+                self.fn = MethodType(fn, parent)
             if hasattr(parent, 'hooks'):
                 parent.hooks.register(self)
 
         update_wrapper(self, self.fn)
 
+        self.__arg_count: Optional[int] = 0 if isinstance(fn, MethodType) else -1
+        self.__kwarg_names: Optional[set[str]] = set()
+        for param in inspect.signature(fn).parameters.values():
+            if param.kind == param.POSITIONAL_ONLY and self.__arg_count is not None:
+                self.__arg_count += 1
+            elif param.kind == param.KEYWORD_ONLY and self.__kwarg_names is not None:
+                self.__kwarg_names.add(param.name)
+            elif param.kind == param.POSITIONAL_OR_KEYWORD:
+                if self.__arg_count is not None:
+                    self.__arg_count += 1
+                if self.__kwarg_names is not None:
+                    self.__kwarg_names.add(param.name)
+            elif param.kind == param.VAR_POSITIONAL:
+                self.__arg_count = None
+            elif param.kind == param.VAR_KEYWORD:
+                self.__kwarg_names = None
+
     def __call__(self, *args: Any, **kwargs: Any) -> None:
+        # Filter arguments if function takes less
+        if self.__arg_count is not None:
+            args = args[:self.__arg_count]
+        if self.__kwarg_names is not None:
+            kwargs = {name: value for name, value in kwargs.values() if name in self.__kwarg_names}
         self.fn(*args, **kwargs)
 
     def __repr__(self) -> str:

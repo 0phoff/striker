@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Generic, Optional, TypeVar, cast
+from typing import Any, Generic, TypeVar
 
 import copy
 from .._weakref import OptionalRef
@@ -11,22 +11,11 @@ T = TypeVar('T', bound=BaseParent)
 
 class Base(HookParent, Generic[T]):
     """ Base Class for Plugins and Mixins. """
-    __parent_protocol__: Optional[Any] = None
     __parent: OptionalRef[T]
     __enabled: bool
 
-    def __init_subclass__(
-        cls,
-        /,
-        parent_protocol: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init_subclass__(**kwargs)
-        if parent_protocol is not None:
-            cls.__parent_protocol__ = parent_protocol
-
     def __new__(cls, *args: Any, **kwargs: Any) -> Base[T]:
-        obj = cast(Base[T], super().__new__(cls))
+        obj = super().__new__(cls)
         obj.__parent = OptionalRef()
         obj.__enabled = True
         return obj

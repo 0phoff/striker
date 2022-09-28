@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TypeVar, cast
 from ._hook import HookDecorator
 
-__all__ = ['HookFactory']
+Self = TypeVar('Self', bound='HookFactory')
 
 
 class HookFactory:
@@ -23,10 +23,10 @@ class HookFactory:
     """
     __instance: Optional[HookFactory] = None
 
-    def __new__(cls) -> HookFactory:
+    def __new__(cls: type[Self]) -> Self:
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
-        return cls.__instance
+        return cast(Self, cls.__instance)
 
     def __getattr__(self, name: str) -> HookDecorator:
         return HookDecorator(name)

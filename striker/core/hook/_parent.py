@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, TypeVar, Union
 
 from ._manager import HookManager
+from .._protocol import ProtocolChecker
 
-__all__ = ['HookParent']
+Self = TypeVar('Self', bound='HookParent')
 
 
 class HookParent:
@@ -17,7 +18,14 @@ class HookParent:
         hooks (HookManager): Manager to run the hooks bound on that specific class instance
 
     Example:
-        >>> class Parent(striker.core.hook.HookParent, hook_types=['a', 'b']):
+        >>> class ParentProtocol(Protocol):
+        ...     @striker.hooks.a
+        ...     def hook_a(self) -> None: ...
+        ...
+        ...     @striker.hooks.b
+        ...     def hook_b(self, value: int) -> None: ...
+        >>>
+        >>> class Parent(striker.core.hook.HookParent, protocol=ParentProtocol):
         ...     @striker.Hooks.a
         ...     def hook_a(self):
         ...         pass
@@ -47,24 +55,27 @@ class HookParent:
         ...         self.hooks.run(type='c', kwargs={'extra': 123})
     """
     hooks: HookManager
-    __hook_check__: Literal['none', 'log', 'raise'] = 'log'
-    __hook_types__: set[str] = set()
+    __type_check__: Literal['none', 'log', 'raise'] = 'log'
+    __protocol__: Optional[Union[type, ProtocolChecker]] = None
 
     def __init_subclass__(
         cls,
         /,
-        hook_types: Optional[Union[set[str], str]] = None,
+        protocol: Optional[type] = None,
         **kwargs: Any,
     ) -> None:
         super().__init_subclass__(**kwargs)
+        if protocol is not None:
+            cls.__protocol__ = protocol
 
-        if isinstance(hook_types, str):
-            cls.__hook_types__ = {*cls.__hook_types__, hook_types}
-        elif hook_types is not None:
-            cls.__hook_types__ = {*cls.__hook_types__, *hook_types}
-
-    def __new__(cls, *args: Any, **kwargs: Any) -> HookParent:
+    def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
         """ Attah a `hook` HookManager object to the instance. """
         obj = super().__new__(cls)
         obj.hooks = HookManager(obj)
         return obj
+
+    @property
+    def protocol(self) -> ProtocolChecker:
+        if isinstance(self.__protocol__, ProtocolChecker):
+            return self.__protocol__
+        return ProtocolChecker().add(self.__class__.__name__, self.__protocol__)
