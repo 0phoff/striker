@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Any, Iterator, Union, Optional, Iterable, cast
+from typing import Any, Callable, Iterator, Union, Optional, Iterable, cast
 
 import copy
-from collections.abc import Sequence
+from contextlib import contextmanager
+from collections.abc import Sequence, Mapping
 import importlib
 import inspect
 import logging
@@ -18,6 +19,7 @@ class Parameters:
     """
     TODO
     """
+    __cast = False
     __init_done = False
     __automatic = {
         'epoch': 0,
@@ -28,7 +30,7 @@ class Parameters:
         for key, value in self.__automatic.items():
             setattr(self, key, value)
 
-        self.__no_serialize__: list[str] = []
+        self.__no_serialize: list[str] = []
         for key in kwargs:
             if key.startswith('_'):
                 serialize = False
@@ -41,11 +43,221 @@ class Parameters:
             if not hasattr(self, key):
                 setattr(self, key, val)
                 if not serialize:
-                    self.__no_serialize__.append(key)
+                    self.__no_serialize.append(key)
             else:
                 log.error('%s attribute already exists as a Parameter and will not be overwritten', key)
 
         self.__init_done = True
+
+    def save(self, filename: Union[Path, str]) -> None:
+        """
+        Serialize all the hyperparameters to a pickle file.
+
+        The network, optimizers and schedulers objects are serialized using their ``state_dict()`` functions.
+
+        Args:
+            filename (str or path): File to store the hyperparameters
+
+        Note:
+            This function will first check if the existing attributes have a `state_dict()` function,
+            in which case it will use this function to get the values needed to save.
+        """
+        state = {}
+
+        for k, v in vars(self).items():
+            if k not in self.__no_serialize:
+                if hasattr(v, 'state_dict'):
+                    state[k] = v.state_dict()
+                else:
+                    state[k] = v
+
+        torch.save(state, filename)
+
+    def load(self, filename: Union[Path, str], strict: Optional[bool] = True) -> None:
+        """
+        Load the hyperparameters from a serialized pickle file.
+
+        Note:
+            This function will first check if the existing attributes have a `load_state_dict()` function,
+            in which case it will use this function with the saved state to restore the values.
+            The `load_state_dict()` function will first be called with both the serialized value and the `strict` argument as a keyword argument.
+            If that fails because of a TypeError, it is called with only the serialized value.
+            This means that you will still get an error if the strict rule is not being followed,
+            but functions that have a `load_state_dict()` function without `strict` argument can be loaded as well.
+
+        Warning:
+            If you save a parameter with a `state_dict()`, but then load it into a :class:`~striker.Parameters` object without that parameter,
+            the state dictionary itself will be loaded in the new object instead of using the `load_state_dict()` function.
+        """
+        state = torch.load(filename, 'cpu')
+
+        for k, v in state.items():
+            current = getattr(self, k, None)
+            if hasattr(current, 'load_state_dict'):
+                try:
+                    current.load_state_dict(v, strict=strict)   # type: ignore[union-attr]
+                except TypeError:
+                    current.load_state_dict(v)                  # type: ignore[union-attr]
+            else:
+                setattr(self, k, v)
+
+    def reset(self) -> None:
+        """ Resets automatic variables epoch and batch """
+        for key, value in self.__automatic.items():
+            setattr(self, key, value)
+
+    def get(self, name: str, default: Optional[Any] = None) -> Any:
+        """ Recursively drill down into objects stored on Parameters and get a value.
+        This item will recursively use ``getattr` to get an item from this object, and return the default value otherwise.
+
+        If one of the intermediate objects is a dictionary we use ``obj[attr]``.
+        If it is a list and the current attribute is a digit, we use ``obj[int(attr)]``.
+
+        Args:
+            name (string): Keys to get, separated by dots
+            default (optional): Default value to return, if no value was found
+        """
+        obj = self
+        for attr in name.split('.'):
+            try:
+                if isinstance(obj, dict):
+                    obj = obj[attr]
+                elif isinstance(obj, Sequence) and attr.isdigit():
+                    obj = obj[int(attr)]
+                else:
+                    obj = getattr(obj, attr)
+            except (KeyError, AttributeError, IndexError):
+                return default
+
+        return obj
+
+    def keys(self) -> list[str]:
+        """ Returns the attributes of your Parameters object, similar to a python dictionary. """
+        return sorted(k for k in self.__dict__ if not k.startswith('_Parameters_'))
+
+    def values(self) -> Iterable[Any]:
+        """ Returns the attribute values of your Parameters object, similar to a python dictionary. """
+        return (getattr(self, k) for k in self.keys())
+
+    def items(self) -> Iterable[tuple[str, Any]]:
+        """ Returns the attribute keys and values of your Parameters object, similar to a python dictionary. """
+        return ((k, getattr(self, k)) for k in self.keys())
+
+    def __getattr__(self, item: str) -> Any:
+        """ Allow to fetch items with the underscore. """
+        if item[0] == '_' and item[1:] in self.__no_serialize:        # NOQA: SIM106 - It makes no sens to handle error first
+            return getattr(self, item[1:])
+        else:
+            raise AttributeError(f"'Parameters' object has no attribute '{item}'")
+
+    def __setattr__(self, item: str, value: Any) -> None:
+        """
+        Store extra variables in this container class.
+
+        This custom function allows to store objects after creation and mark whether are not you want to serialize them,
+        by prefixing them with an underscore.
+        """
+        if item in self.__dict__ or not self.__init_done:
+            super().__setattr__(item, value)
+        elif item[0] == '_':
+            if item[1:] not in self.__dict__:
+                self.__no_serialize.append(item[1:])
+            elif item[1:] not in self.__no_serialize:
+                raise AttributeError(f'{item[1:]} already stored in this object as serializable value!')
+            super().__setattr__(item[1:], value)
+        else:
+            super().__setattr__(item, value)
+
+    def __repr__(self) -> str:
+        """
+        Print all values stored in the object as repr.
+
+        Objects that will not be serialized are marked with an asterisk.
+        """
+        s = f'{self.__class__.__name__}('
+        for k in sorted(self.__dict__.keys()):
+            if k.startswith('_Parameters__'):
+                continue
+
+            val = self.__dict__[k]
+            valrepr = repr(val)
+            if '\n' in valrepr:
+                valrepr = valrepr.replace('\n', '\n    ')
+            if k in self.__no_serialize:
+                k += '*'
+
+            s += f'\n  {k} = {valrepr}'
+
+        return s + '\n)'
+
+    def __str__(self) -> str:
+        """
+        Print all values stored in the object as string.
+
+        Objects that will not be serialized are marked with an asterisk.
+        """
+        s = f'{self.__class__.__name__}('
+        for k in sorted(self.__dict__.keys()):
+            if k.startswith('_Parameters__'):
+                continue
+
+            val = self.__dict__[k]
+            valrepr = str(val)
+            if '\n' in valrepr:
+                valrepr = getattr(val, '__name__', val.__class__.__name__)
+            if k in self.__no_serialize:
+                k += '*'
+
+            s += f'\n  {k} = {valrepr}'
+
+        return s + '\n)'
+
+    def __add__(self, other: Parameters) -> Parameters:
+        """
+        Add 2 Parameters together.
+
+        This function first creates a shallow copy of the first `self` argument
+        and then loops through the items in the `other` argument and adds those parameters
+        if they are not already available in the new Parameters object.
+
+        Waring:
+            We only take shallow copies when adding hyperparameters together,
+            so beware if you modify objects from one hyperparameter object after adding it to another.
+
+        Note:
+            When adding Parameters objects together,
+            we keep the automatic variables (epoch, batch) from the first object.
+            Optionally, you can reset these variables by calling the :func:`~striker.Parameters.reset()` method.
+        """
+        if not isinstance(other, Parameters):
+            raise NotImplementedError('Can only add 2 Hyperparameters objects together')
+
+        new = copy.copy(self)
+        return new.__iadd__(other)
+
+    def __iadd__(self, other: Parameters) -> Parameters:
+        # Small performance boost by not deepcopying self.
+        if not isinstance(other, Parameters):
+            raise NotImplementedError('Can only add 2 Hyperparameters objects together')
+
+        for key in other:
+            if not hasattr(self, key):
+                nkey = f'_{key}' if key in other.__no_serialize else key
+                setattr(self, nkey, getattr(other, key))
+            elif key not in Parameters.__automatic:
+                log.warning('"%s" is available in both Parameters, keeping first', key)
+
+        return self
+
+    def __copy__(self) -> Parameters:
+        new = self.__class__()
+        for key, value in self.__dict__.items():
+            setattr(new, key, value)
+        return new
+
+    def __iter__(self) -> Iterator[str]:
+        """ Return an iterator of :func:`~striker.Parameters.keys()`, so we can loop over this object like a python dictionary. """
+        return iter(self.keys())
 
     @classmethod
     def from_file(cls, filename: Union[Path, str], variable: str = 'params', **kwargs: Any) -> Parameters:
@@ -120,7 +332,41 @@ class Parameters:
                b = value_B
             )
         """
-        filename = Path(filename)
+        params = cls._load_external(Path(filename), variable)
+
+        if callable(params):
+            if cls.__cast:
+                annotations = getattr(params, '__annotations__', {})
+                signature = inspect.signature(params)
+                for name, cast_type in annotations.items():
+                    param = signature.parameters[name]
+                    if param.kind == param.VAR_KEYWORD:
+                        if cast_type not in (str, Any):
+                            raise TypeError(f'Cannot convert **{param.name} arguments to {cast_type}')
+                        continue
+
+                    if name in kwargs and isinstance(kwargs[name], str):
+                        try:
+                            kwargs[name] = cast_arg(kwargs[name], cast_type)
+                        except BaseException as err:
+                            raise TypeError(f'Could not convert "{kwargs[name]}" to "{cast_type}"') from err
+
+            params = params(**kwargs)
+            if not isinstance(params, cls):
+                raise TypeError(f'Configuration function did not return a Parameters object [{type(params)}]')
+
+        return params
+
+    @staticmethod
+    @contextmanager
+    def enable_cast(enabled: bool = True) -> Iterator[None]:
+        state = Parameters.__cast
+        Parameters.__cast = enabled
+        yield
+        Parameters.__cast = state
+
+    @classmethod
+    def _load_external(cls, filename: Path, variable: str) -> Union[Parameters, Callable[..., Parameters]]:
         tried = []
         if not (filename.is_file() or filename.is_absolute()):
             tried.append(str(filename))
@@ -142,252 +388,91 @@ class Parameters:
         except AttributeError as err:
             raise AttributeError(f'Configuration variable [{variable}] not found in file [{filename}]') from err
 
-        if callable(params):
-            params = params(**kwargs)
-            if not isinstance(params, cls):
-                raise TypeError(f'Configuration function did not return a Parameters object [{type(params)}]')
-        elif not isinstance(params, cls):
+        if not callable(params) and not isinstance(params, Parameters):
             raise TypeError(f'Configuration variable "{variable}" should be a Parameters object [{type(params)}]')
 
         return params
 
-    def save(self, filename: Union[Path, str]) -> None:
-        """
-        Serialize all the hyperparameters to a pickle file.
 
-        The network, optimizers and schedulers objects are serialized using their ``state_dict()`` functions.
+def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This function is not very complex, but has lots of checks
+    # String: return as is
+    if cast_type == str:
+        return param
 
-        Args:
-            filename (str or path): File to store the hyperparameters
+    # Any: simply return string
+    if cast_type == Any:
+        log.warning('type is "Any", leaving input argument as string')
+        return param
 
-        Note:
-            This function will first check if the existing attributes have a `state_dict()` function,
-            in which case it will use this function to get the values needed to save.
-        """
-        state = {}
+    # Numbers: cast number
+    if cast_type in (int, float, complex):
+        return cast_type(param)
 
-        for k, v in vars(self).items():
-            if k not in self.__no_serialize__:
-                if hasattr(v, 'state_dict'):
-                    state[k] = v.state_dict()
-                else:
-                    state[k] = v
+    # None: check that string is 'none'
+    if cast_type == type(None):     # NOQA: E721 - isinstance with a type causes a TypeError
+        if param.lower() != 'none':
+            raise ValueError(f'Expected string "none", but got "{param}"')
+        return None
 
-        torch.save(state, filename)
+    # Slice: Parse x:y:z (we assume ints for the slice parts)
+    if cast_type == slice:
+        if ':' not in param:
+            raise ValueError(f'Expected slice notation with ":", but got "{param}"')
 
-    def load(self, filename: Union[Path, str], strict: Optional[bool] = True) -> None:
-        """
-        Load the hyperparameters from a serialized pickle file.
+        try:
+            return slice(*(int(v) if len(v) > 0 else None for v in param.split(':')))
+        except BaseException as err:
+            raise ValueError(f'Could not convert "{param}" to slice') from err
 
-        Note:
-            This function will first check if the existing attributes have a `load_state_dict()` function,
-            in which case it will use this function with the saved state to restore the values.
-            The `load_state_dict()` function will first be called with both the serialized value and the `strict` argument as a keyword argument.
-            If that fails because of a TypeError, it is called with only the serialized value.
-            This means that you will still get an error if the strict rule is not being followed,
-            but functions that have a `load_state_dict()` function without `strict` argument can be loaded as well.
+    origin = getattr(cast_type, '__origin__', None)
 
-        Warning:
-            If you save a parameter with a `state_dict()`, but then load it into a :class:`~striker.Parameters` object without that parameter,
-            the state dictionary itself will be loaded in the new object instead of using the `load_state_dict()` function.
-        """
-        state = torch.load(filename, 'cpu')
+    # Union/Optional: Try casting to any of the underlying types
+    if origin == Union:
+        # get subtypes (with str type at the end if it is in there)
+        subtypes = getattr(cast_type, '__args__', [str])
+        subtypes = sorted(subtypes, key=lambda t: t == str)
 
-        for k, v in state.items():
-            current = getattr(self, k, None)
-            if hasattr(current, 'load_state_dict'):
-                try:
-                    current.load_state_dict(v, strict=strict)   # type: ignore[union-attr]
-                except TypeError:
-                    current.load_state_dict(v)                  # type: ignore[union-attr]
-            else:
-                setattr(self, k, v)
-
-    def to(self, device: Union[torch.device, str]) -> None:
-        """
-        Cast the parameters from the network, optimizers and schedulers to a given device.
-
-        This function will go through all the class attributes and check if they have a `to()` function, which it will call with the device.
-
-        Args:
-            device (torch.device or string): Device to cast parameters
-
-        Note:
-            PyTorch optimizers and the ReduceLROnPlateau classes do not have a `to()` function implemented.
-            For these objects, this function will go through all their necessary attributes and cast the tensors to the right device.
-        """
-        def manual_to(obj: dict[str, Any], device: Union[str, torch.device]) -> None:
-            for param in obj.values():
-                if isinstance(param, torch.Tensor):
-                    param.data = param.data.to(device)
-                    if param._grad is not None:
-                        param._grad.data = param._grad.data.to(device)
-                elif isinstance(param, dict):
-                    manual_to(param, device)
-
-        for value in self.__dict__.values():
-            to = getattr(value, 'to', None)
-            if callable(to):
-                to(device)
-            elif isinstance(value, torch.optim.Optimizer):
-                manual_to(value.state, device)
-            elif isinstance(value, (torch.optim.lr_scheduler._LRScheduler, torch.optim.lr_scheduler.ReduceLROnPlateau)):
-                manual_to(value.__dict__, device)
-
-    def reset(self) -> None:
-        """ Resets automatic variables epoch and batch """
-        for key, value in self.__automatic.items():
-            setattr(self, key, value)
-
-    def get(self, name: str, default: Optional[Any] = None) -> Any:
-        """ Recursively drill down into objects stored on Parameters and get a value.
-        This item will recursively use ``getattr` to get an item from this object, and return the default value otherwise.
-
-        If one of the intermediate objects is a dictionary we use ``obj[attr]``.
-        If it is a list and the current attribute is a digit, we use ``obj[int(attr)]``.
-
-        Args:
-            name (string): Keys to get, separated by dots
-            default (optional): Default value to return, if no value was found
-        """
-        obj = self
-        for attr in name.split('.'):
+        for subtype in subtypes:
             try:
-                if isinstance(obj, dict):
-                    obj = obj[attr]
-                elif isinstance(obj, Sequence) and attr.isdigit():
-                    obj = obj[int(attr)]
-                else:
-                    obj = getattr(obj, attr)
-            except (KeyError, AttributeError, IndexError):
-                return default
-
-        return obj
-
-    def __getattr__(self, item: str) -> Any:
-        """ Allow to fetch items with the underscore. """
-        if item[0] == '_' and item[1:] in self.__no_serialize__:        # NOQA: SIM106 - It makes no sens to handle error first
-            return getattr(self, item[1:])
-        else:
-            raise AttributeError(f"'Parameters' object has no attribute '{item}'")
-
-    def __setattr__(self, item: str, value: Any) -> None:
-        """
-        Store extra variables in this container class.
-
-        This custom function allows to store objects after creation and mark whether are not you want to serialize them,
-        by prefixing them with an underscore.
-        """
-        if item in self.__dict__ or not self.__init_done:
-            super().__setattr__(item, value)
-        elif item[0] == '_':
-            if item[1:] not in self.__dict__:
-                self.__no_serialize__.append(item[1:])
-            elif item[1:] not in self.__no_serialize__:
-                raise AttributeError(f'{item[1:]} already stored in this object as serializable value!')
-            super().__setattr__(item[1:], value)
-        else:
-            super().__setattr__(item, value)
-
-    def __repr__(self) -> str:
-        """
-        Print all values stored in the object as repr.
-
-        Objects that will not be serialized are marked with an asterisk.
-        """
-        s = f'{self.__class__.__name__}('
-        for k in sorted(self.__dict__.keys()):
-            if k.startswith('_Parameters__'):
+                return cast_arg(param, subtype)
+            except BaseException:
                 continue
 
-            val = self.__dict__[k]
-            valrepr = repr(val)
-            if '\n' in valrepr:
-                valrepr = valrepr.replace('\n', '\n    ')
-            if k in self.__no_serialize__:
-                k += '*'
+        raise ValueError(f'Could not cast "{param}" to "{cast_type}"')
 
-            s += f'\n  {k} = {valrepr}'
+    # Sequence: split on "," and cast trimmed substrings to basetype
+    if inspect.isclass(origin) and issubclass(origin, Sequence):
+        subtypes = getattr(cast_type, '__args__', [])
+        if len(subtypes):
+            subtype = subtypes[0]
+        else:
+            subtype = str
+            log.warning(f'Sequence "{cast_type}" has no subtype, returning a Sequence[str]')
 
-        return s + '\n)'
+        return origin(cast_arg(s.strip(), subtype) for s in param.split(','))       # type: ignore[call-arg]
 
-    def __str__(self) -> str:
-        """
-        Print all values stored in the object as string.
+    # Mapping: split on "," and then on ":". Cast results to basetype
+    if inspect.isclass(origin) and issubclass(origin, Mapping):
+        subtypes = getattr(cast_type, '__args__', [])
+        if len(subtypes) > 1:
+            keytype = subtypes[0]
+            valuetype = subtypes[1]
+        elif len(subtypes):
+            keytype = subtypes[0]
+            valuetype = str
+            log.warning(f'Mapping "{cast_type}" has no value subtype, returning a Mapping[{keytype}, str]')
+        else:
+            keytype = str
+            valuetype = str
+            log.warning(f'Mapping "{cast_type}" has no subtypes, returning a Mapping[str, str]')
 
-        Objects that will not be serialized are marked with an asterisk.
-        """
-        s = f'{self.__class__.__name__}('
-        for k in sorted(self.__dict__.keys()):
-            if k.startswith('_Parameters__'):
-                continue
+        values = []
+        for keyvalue in param.split(','):
+            key, value = keyvalue.split(':')
+            values.append((cast_arg(key.strip(), keytype), cast_arg(value.strip(), valuetype)))
 
-            val = self.__dict__[k]
-            valrepr = str(val)
-            if '\n' in valrepr:
-                valrepr = getattr(val, '__name__', val.__class__.__name__)
-            if k in self.__no_serialize__:
-                k += '*'
+        return origin(values)       # type: ignore[call-arg]
 
-            s += f'\n  {k} = {valrepr}'
-
-        return s + '\n)'
-
-    def __add__(self, other: Parameters) -> Parameters:
-        """
-        Add 2 Parameters together.
-
-        This function first creates a shallow copy of the first `self` argument
-        and then loops through the items in the `other` argument and adds those parameters
-        if they are not already available in the new Parameters object.
-
-        Waring:
-            We only take shallow copies when adding hyperparameters together,
-            so beware if you modify objects from one hyperparameter object after adding it to another.
-
-        Note:
-            When adding Parameters objects together,
-            we keep the automatic variables (epoch, batch) from the first object.
-            Optionally, you can reset these variables by calling the :func:`~striker.Parameters.reset()` method.
-        """
-        if not isinstance(other, Parameters):
-            raise NotImplementedError('Can only add 2 Hyperparameters objects together')
-
-        new = copy.copy(self)
-        return new.__iadd__(other)
-
-    def __iadd__(self, other: Parameters) -> Parameters:
-        # Small performance boost by not deepcopying self.
-        if not isinstance(other, Parameters):
-            raise NotImplementedError('Can only add 2 Hyperparameters objects together')
-
-        for key in other:
-            if not hasattr(self, key):
-                nkey = f'_{key}' if key in other.__no_serialize__ else key
-                setattr(self, nkey, getattr(other, key))
-            elif key not in Parameters.__automatic:
-                log.warning('"%s" is available in both Parameters, keeping first', key)
-
-        return self
-
-    def __copy__(self) -> Parameters:
-        new = self.__class__()
-        for key, value in self.__dict__.items():
-            setattr(new, key, value)
-        return new
-
-    def keys(self) -> list[str]:
-        """ Returns the attributes of your Parameters object, similar to a python dictionary. """
-        return sorted(k for k in self.__dict__ if not k.startswith('_Parameters_'))
-
-    def values(self) -> Iterable[Any]:
-        """ Returns the attribute values of your Parameters object, similar to a python dictionary. """
-        return (getattr(self, k) for k in self.keys())
-
-    def items(self) -> Iterable[tuple[str, Any]]:
-        """ Returns the attribute keys and values of your Parameters object, similar to a python dictionary. """
-        return ((k, getattr(self, k)) for k in self.keys())
-
-    def __iter__(self) -> Iterator[str]:
-        """ Return an iterator of :func:`~striker.Parameters.keys()`, so we can loop over this object like a python dictionary. """
-        return iter(self.keys())
+    # Any other
+    log.error(f'Unkown type "{cast_type}", cannot convert! Simply returning string')
+    return param
