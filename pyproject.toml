@@ -6,13 +6,20 @@ authors = ["0phoff <0phoff@users.noreply.github.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+
+# Required dependencies
+typeguard = "^2.13.3"
 torch = [
     { markers = "sys_platform == 'linux'", url = "https://download.pytorch.org/whl/cu116/torch-1.12.1%2Bcu116-cp39-cp39-linux_x86_64.whl" },
     { markers = "sys_platform == 'win32'", url = "https://download.pytorch.org/whl/cu116/torch-1.12.1%2Bcu116-cp39-cp39-win_amd64.whl" },
 ]
+
+# Optional dependencies
 rich = { version = "~12.5", optional = true }
-rich-argparse = { version = "0.2.1", optional = true }
-typeguard = "^2.13.3"
+rich-argparse = { version = "^0.2.1", optional = true }
+
+[tool.poetry.extras]
+rich = ["rich", "rich-argparse"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
