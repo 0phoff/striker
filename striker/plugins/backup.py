@@ -13,7 +13,7 @@ class ParentProtocol(Protocol):
     backup_folder: Optional[Union[str, Path]] = None
     """ Folder where we store backups. """
 
-    backup_rate: Optional[Union[list[Union[int, slice]], int, slice]] = slice(None, None, 1)
+    backup_rate: Optional[Union[list[Union[int, slice]], int, slice]] = None
     """
     When to store backups.
 
@@ -79,7 +79,7 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
         elif not self.backup_folder.is_dir():
             raise ValueError(f'Backup folder "{self.backup_folder}" is not a directory')
 
-        backup_rate = getattr(self.parent, 'backup_rate', slice(None, None, 1))
+        backup_rate = getattr(self.parent, 'backup_rate', None)
         if backup_rate is None:
             log.warn('"backup_rate" is None, so no backups will be taken.')
             self.enabled = False
