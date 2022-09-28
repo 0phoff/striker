@@ -36,8 +36,13 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
     __type_check__: Literal['none', 'log', 'raise'] = 'none'
     parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
 
-    def __init__(self, mode: Literal['batch', 'epoch'] = 'epoch') -> None:
+    def __init__(
+        self,
+        mode: Literal['batch', 'epoch'] = 'epoch',
+        extension: str = '.param.pt',
+    ) -> None:
         self.backup_mode = mode
+        self.extension = extension
 
     @hooks.engine_start
     def setup_backup_hook(self, entry: Literal['train', 'validation', 'test']) -> None:
@@ -70,6 +75,6 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
             self.hooks.train_epoch_end[backup_rate](self.run_backup)
 
     def run_backup(self, index: int) -> None:
-        backup = self.backup_folder / f'backup-{self.backup_mode}-{index:05d}.state.pt'
+        backup = self.backup_folder / f'backup-{self.backup_mode}-{index:05d}{self.extension}'
         self.parent.params.save(backup)
         log.info('Saved backup: %s', backup)

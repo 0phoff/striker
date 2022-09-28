@@ -221,11 +221,7 @@ class CLI(argparse.ArgumentParser):
         variable: str,
     ) -> Engine:
         params = self.__get_parameters(args, variable)
-        if args.weights is not None:
-            log.info('Loading weights from: %s', args.weights)
-            params.load(args.weights)
-        else:
-            log.error('No weights given to load from!')
+        self.__load_weights(params, args.weights)
 
         engine = func(params, args)
         engine.validation()
@@ -239,11 +235,7 @@ class CLI(argparse.ArgumentParser):
         variable: str,
     ) -> Engine:
         params = self.__get_parameters(args, variable)
-        if args.weights is not None:
-            log.info('Loading weights from: %s', args.weights)
-            params.load(args.weights)
-        else:
-            log.error('No weights given to load from!')
+        self.__load_weights(params, args.weights)
 
         engine = func(params, args)
         engine.test()
@@ -306,3 +298,11 @@ class CLI(argparse.ArgumentParser):
         param_kwargs = {n: v for n, v in args.param} if args.param is not None else {}
         with Parameters.enable_cast():
             return Parameters.from_file(args.config, variable, **param_kwargs)
+
+    @staticmethod
+    def __load_weights(params: Parameters, weights: Optional[Path]) -> None:
+        if weights is not None:
+            log.info('Loading weights from: %s', weights)
+            params.load(weights)
+        else:
+            log.error('No weights given to load from!')
