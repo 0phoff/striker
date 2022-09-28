@@ -32,7 +32,15 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
 
     Args:
         mode: Whether to store backups at an epoch or batch interval (specified by ``backup_rate`` in the parent). Default **epoch**
-     """
+
+    You can also call the save function manually, to create a backup in the correct folder (and with the correct extension):
+
+    >>> class Engine(striker.Engine):
+    ...     plugins = [BackupPlugin()]
+    ...
+    ...     def dummy_function(self):
+    ...         self.plugins['backupplugin'].save('custom-save-file')
+    """
     __type_check__: Literal['none', 'log', 'raise'] = 'none'
     parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
 
@@ -43,6 +51,14 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
     ) -> None:
         self.backup_mode = mode
         self.extension = extension
+
+    def save(self, name: str) -> None:
+        backup_path = self.backup_folder / f'{name}'
+        if not ''.join(backup_path.suffixes).endswith(self.extension):
+            backup_path = backup_path.with_suffix(self.extension)
+
+        self.parent.params.save(backup_path)
+        log.info('Saved backup: %s', backup_path)
 
     @hooks.engine_start
     def setup_backup_hook(self, entry: Literal['train', 'validation', 'test']) -> None:
@@ -75,6 +91,4 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
             self.hooks.train_epoch_end[backup_rate](self.run_backup)
 
     def run_backup(self, index: int) -> None:
-        backup = self.backup_folder / f'backup-{self.backup_mode}-{index:05d}{self.extension}'
-        self.parent.params.save(backup)
-        log.info('Saved backup: %s', backup)
+        self.save(f'backup-{self.backup_mode}-{index:05d}')
