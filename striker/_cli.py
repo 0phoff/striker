@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 import argparse
 import inspect
+import logging
 from pathlib import Path
 try:
     from rich_argparse import RichHelpFormatter as HelpFormatter
@@ -14,6 +15,8 @@ except ImportError:
 
 from . import Engine, Parameters
 from .core._protocol import param_to_string
+
+log = logging.getLogger(__name__)
 
 
 class CustomFormatter(HelpFormatter):
@@ -121,6 +124,12 @@ class CLI(argparse.ArgumentParser):
             help='test a model with validation data',
         )
         self.__parsers['validation'].set_defaults(subcommand='validation')
+        self.__parsers['validation'].add_argument(
+            '-w', '--weights',
+            type=Path,
+            default=None,
+            help='Path to stored weights',
+        )
 
         self.__parsers['test'] = subparsers.add_parser(
             'test',
@@ -130,6 +139,12 @@ class CLI(argparse.ArgumentParser):
             help='test a model with test data',
         )
         self.__parsers['test'].set_defaults(subcommand='test')
+        self.__parsers['test'].add_argument(
+            '-w', '--weights',
+            type=Path,
+            default=None,
+            help='Path to stored weights',
+        )
 
         self.__parsers['protocol'] = subparsers.add_parser(
             'protocol',
@@ -206,6 +221,12 @@ class CLI(argparse.ArgumentParser):
         variable: str,
     ) -> Engine:
         params = self.__get_parameters(args, variable)
+        if args.weights is not None:
+            log.info('Loading weights from: %s', args.weights)
+            params.load(args.weights)
+        else:
+            log.error('No weights given to load from!')
+
         engine = func(params, args)
         engine.validation()
 
@@ -218,6 +239,12 @@ class CLI(argparse.ArgumentParser):
         variable: str,
     ) -> Engine:
         params = self.__get_parameters(args, variable)
+        if args.weights is not None:
+            log.info('Loading weights from: %s', args.weights)
+            params.load(args.weights)
+        else:
+            log.error('No weights given to load from!')
+
         engine = func(params, args)
         engine.test()
 
