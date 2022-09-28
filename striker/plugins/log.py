@@ -32,7 +32,7 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         logger_name: str = '',
         file_mode: Literal['a', 'w'] = 'a',
         rich_handler: bool = True,
-        rich_level: int = logging.NOTSET,
+        rich_level: int = logging.INFO,
     ):
         self.logger = logging.getLogger(logger_name)
         self.mode = file_mode
