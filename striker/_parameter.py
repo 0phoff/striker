@@ -375,7 +375,7 @@ class Parameters:
                 if stackfile.is_file():
                     filename = stackfile
                     break
-       
+
         if not filename.is_file():
             raise FileNotFoundError(f'Could not find file, tried following paths: {tried}')
 

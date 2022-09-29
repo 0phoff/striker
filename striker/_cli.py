@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Optional, Any, Sequence
+from typing import TYPE_CHECKING, Callable, Optional, Any, Sequence, cast
 if TYPE_CHECKING:
     print: Any          # MyPy complains that print is not defined without this
 
@@ -15,8 +15,8 @@ try:
     from rich import print as rprint
     from rich.markup import escape
 
-    def print(*args, **kwargs):
-        args = (escape(a) if isinstance(a, str) else a for a in args)
+    def print(*args: Any, **kwargs: Any) -> None:
+        args = tuple(escape(a) if isinstance(a, str) else a for a in args)
         rprint(*args, **kwargs)
 except ImportError:
     from builtins import print
@@ -214,9 +214,6 @@ class CLI(argparse.ArgumentParser):
 
         Args:
             TODO
-
-        Returns:
-            Returns the created Engine, unless you ran the parameters subcommand, in which case it returns an Optional[Parameters] object.
         """
         parsed_args = self.parse_args(args, namespace)
         if parsed_args.subcommand == 'train':
@@ -277,14 +274,14 @@ class CLI(argparse.ArgumentParser):
         func: Callable[[Parameters, argparse.Namespace], Engine],
         variable: str,
     ) -> None:
-        EngineCls = None
+        EngineCls: Optional[type[Engine]] = None
         if inspect.isclass(func) and issubclass(func, Engine):
             EngineCls = func
-        elif inspect.ismethod(func) and issubclass(func.__self__, Engine):
-            EngineCls = func.__self__
+        elif inspect.ismethod(func) and issubclass(cast(type, func.__self__), Engine):
+            EngineCls = cast(type[Engine], func.__self__)
 
         if EngineCls is not None:
-            self.__proto = ProtocolChecker().add(EngineCls.__name__, EngineCls.__protocol__)
+            self.__proto = ProtocolChecker().add(EngineCls.__name__, cast(Optional[type], EngineCls.__protocol__))
 
             # Mixins
             for name in dir(EngineCls):
@@ -293,7 +290,7 @@ class CLI(argparse.ArgumentParser):
                 except BaseException:
                     continue
                 if isinstance(value, Mixin):
-                    self.__proto.add(name, value.__protocol__)
+                    self.__proto.add(name, cast(Optional[type], value.__protocol__))
 
             # Plugins
             for value in getattr(EngineCls, 'plugins', []):
