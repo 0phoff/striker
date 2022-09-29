@@ -18,13 +18,12 @@ class ParentProtocol(Protocol):
             output that gets aggregated in a list for :meth:`~ParentProtocol.post()``.
         """
 
-    def post(self, output: list[Any], dataloader: DataLoader[Any]) -> Any:
+    def post(self, output: list[Any]) -> Any:
         """
         Post-processing of the network output.
 
         Args:
             output: Aggregated output from :meth:`~ParentProtocol.infer()`.
-            dataloader: Dataloader that was used to run the model.
 
         Returns:
             Post-processed output such as metrics, losses, etc.
@@ -140,6 +139,6 @@ class TestLoopMixin(LoopMixin, protocol=ParentProtocol):
             self.parent.run_hook(type=f'{self.name}_batch_end', index=batch, args=(batch, outputs[-1]))
             yield
 
-        output = self.parent.post(outputs, dataloader)
+        output = self.parent.post(outputs)
 
         self.parent.run_hook(type=f'{self.name}_epoch_end', args=(output,))
