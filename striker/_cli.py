@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import TYPE_CHECKING, Callable, Optional, Any, Sequence
 if TYPE_CHECKING:
     print: Any          # MyPy complains that print is not defined without this
@@ -7,14 +6,26 @@ import argparse
 import inspect
 import logging
 from pathlib import Path
+
+from . import Engine, Parameters
+from .core import Mixin
+from .core._protocol import ProtocolChecker, signature_to_string
+
+try:
+    from rich import print as rprint
+    from rich.markup import escape
+
+    def print(*args, **kwargs):
+        args = (escape(a) if isinstance(a, str) else a for a in args)
+        rprint(*args, **kwargs)
+except ImportError:
+    from builtins import print
+
 try:
     from rich_argparse import RichHelpFormatter as HelpFormatter
     HelpFormatter.styles['argparse.groups'] = 'bold italic yellow'
 except ImportError:
     from argparse import HelpFormatter
-
-from . import Engine, Parameters
-from .core._protocol import param_to_string
 
 log = logging.getLogger(__name__)
 
@@ -80,6 +91,10 @@ class CLI(argparse.ArgumentParser):
     __init_done: bool = False
 
     def __init__(self, *args: Any, **kwargs: Any):
+        self.__engine: Optional[Engine] = None
+        self.__param: Optional[Parameters] = None
+        self.__proto: Optional[ProtocolChecker] = None
+
         super().__init__(*args, **kwargs)
         if self.formatter_class is argparse.HelpFormatter:
             self.formatter_class = CustomFormatter
@@ -154,6 +169,11 @@ class CLI(argparse.ArgumentParser):
             help='show engine protocol',
         )
         self.__parsers['protocol'].set_defaults(subcommand='protocol')
+        self.__parsers['protocol'].add_argument(
+            '--check',
+            action='store_true',
+            help='Check engine against protocol in addition to printing it',
+        )
 
         self.__parsers['parameters'] = subparsers.add_parser(
             'parameters',
@@ -164,9 +184,9 @@ class CLI(argparse.ArgumentParser):
         )
         self.__parsers['parameters'].set_defaults(subcommand='parameters')
         self.__parsers['parameters'].add_argument(
-            '-k', '--kwargs',
+            '--signature',
             action='store_true',
-            help='show parameter kwargs instead of the parameters',
+            help='show parameter signature with its arguments instead of creating it',
         )
 
         self.__init_done = True
@@ -188,82 +208,122 @@ class CLI(argparse.ArgumentParser):
         variable: str = 'params',
         args: Optional[Sequence[str]] = None,
         namespace: Optional[argparse.Namespace] = None,
-    ) -> Optional[Engine]:
+    ) -> None:
+        """
+        Parse arguments, create the engine and run the appropriate method.
+
+        Args:
+            TODO
+
+        Returns:
+            Returns the created Engine, unless you ran the parameters subcommand, in which case it returns an Optional[Parameters] object.
+        """
         parsed_args = self.parse_args(args, namespace)
         if parsed_args.subcommand == 'train':
-            return self.__train(parsed_args, func, variable)
+            self.__train(parsed_args, func, variable)
         elif parsed_args.subcommand == 'validation':
-            return self.__validation(parsed_args, func, variable)
+            self.__validation(parsed_args, func, variable)
         elif parsed_args.subcommand == 'test':
-            return self.__test(parsed_args, func, variable)
+            self.__test(parsed_args, func, variable)
         elif parsed_args.subcommand == 'protocol':
-            return self.__protocol(parsed_args, func, variable)
+            if parsed_args.check:
+                self.__protocol_check(parsed_args, func, variable)
+            else:
+                self.__protocol(parsed_args, func, variable)
         elif parsed_args.subcommand == 'parameters':
-            self.__parameters(parsed_args, func, variable)
-        return None
+            if parsed_args.signature:
+                self.__parameters_signature(parsed_args, func, variable)
+            else:
+                self.__parameters(parsed_args, func, variable)
 
     def __train(
         self,
         args: argparse.Namespace,
         func: Callable[[Parameters, argparse.Namespace], Engine],
         variable: str,
-    ) -> Engine:
+    ) -> None:
         params = self.__get_parameters(args, variable)
-        engine = func(params, args)
-        engine.train()
 
-        return engine
+        self.__engine = func(params, args)
+        self.__engine.train()
 
     def __validation(
         self,
         args: argparse.Namespace,
         func: Callable[[Parameters, argparse.Namespace], Engine],
         variable: str,
-    ) -> Engine:
+    ) -> None:
         params = self.__get_parameters(args, variable)
         self.__load_weights(params, args.weights)
 
-        engine = func(params, args)
-        engine.validation()
-
-        return engine
+        self.__engine = func(params, args)
+        self.__engine.validation()
 
     def __test(
         self,
         args: argparse.Namespace,
         func: Callable[[Parameters, argparse.Namespace], Engine],
         variable: str,
-    ) -> Engine:
+    ) -> None:
         params = self.__get_parameters(args, variable)
         self.__load_weights(params, args.weights)
 
-        engine = func(params, args)
-        engine.test()
-
-        return engine
+        self.__engine = func(params, args)
+        self.__engine.test()
 
     def __protocol(
         self,
         args: argparse.Namespace,
         func: Callable[[Parameters, argparse.Namespace], Engine],
         variable: str,
-    ) -> Engine:
+    ) -> None:
+        EngineCls = None
+        if inspect.isclass(func) and issubclass(func, Engine):
+            EngineCls = func
+        elif inspect.ismethod(func) and issubclass(func.__self__, Engine):
+            EngineCls = func.__self__
+
+        if EngineCls is not None:
+            self.__proto = ProtocolChecker().add(EngineCls.__name__, EngineCls.__protocol__)
+
+            # Mixins
+            for name in dir(EngineCls):
+                try:
+                    value = getattr(EngineCls, name, None)
+                except BaseException:
+                    continue
+                if isinstance(value, Mixin):
+                    self.__proto.add(name, value.__protocol__)
+
+            # Plugins
+            for value in getattr(EngineCls, 'plugins', []):
+                name = value.__class__.__name__.lower()
+                self.__proto.add(name, value.__protocol__)
+
+            print(self.__proto)
+        else:
+            log.warning('Could not get custom Engine class from function, so we need to build the engine to get the protocol')
+            params = self.__get_parameters(args, variable)
+            self.__engine = func(params, args)
+            print(self.__engine.protocol)
+
+    def __protocol_check(
+        self,
+        args: argparse.Namespace,
+        func: Callable[[Parameters, argparse.Namespace], Engine],
+        variable: str,
+    ) -> None:
         params = self.__get_parameters(args, variable)
-        engine = func(params, args)
+        self.__engine = func(params, args)
 
         try:
-            from rich import print
             from rich.table import Table
-
             table = Table('', '', show_header=False, border_style='dim', expand=True, highlight=True, show_edge=False)
-            table.add_row(engine.protocol, engine.protocol.checker(engine))
+            table.add_row(self.__engine.protocol, self.__engine.protocol.checker(self.__engine))
             print(table)
-
         except ImportError:
-            print(engine.protocol)
-            print(engine.protocol.checker(engine))
-
-        return engine
+            print(self.__engine.protocol)
+            print(self.__engine.protocol.checker(self.__engine))
 
     def __parameters(
         self,
@@ -271,27 +331,41 @@ class CLI(argparse.ArgumentParser):
         func: Callable[[Parameters, argparse.Namespace], Engine],
         variable: str,
     ) -> None:
-        global print
-        escape = lambda x: x                    # NOQA: E731 - lambda function is fine for this small identity func
-        with suppress(ImportError):
-            from rich import print
-            from rich.markup import escape      # type: ignore[no-redef]
+        self.__param = self.__get_parameters(args, variable)
+        print(self.__param)
 
-        if args.kwargs:
-            param_symbol = Parameters._load_external(Path(args.config), variable)
-            if not callable(param_symbol):
-                raise NotImplementedError(f'"{variable}" in "{args.config}" is not a function and thus has no arguments')
+    def __parameters_signature(
+        self,
+        args: argparse.Namespace,
+        func: Callable[[Parameters, argparse.Namespace], Engine],
+        variable: str,
+    ) -> None:
+        param_symbol = Parameters._load_external(Path(args.config), variable)
+        if not callable(param_symbol):
+            raise NotImplementedError(f'"{variable}" in "{args.config}" is not a function and thus has no arguments')
 
-            signature = inspect.signature(param_symbol)
-            parameters = (param_to_string(p) for p in signature.parameters.values())
+        signature = inspect.signature(param_symbol)
+        print(f'{variable}{signature_to_string(signature)}')
 
-            print(escape(f'{variable}('))
-            for param in parameters:
-                print(escape(f'  {param}'))
-            print(')')
-        else:
-            params = self.__get_parameters(args, variable)
-            print(escape(str(params)))
+    @property
+    def engine(self) -> Optional[Engine]:
+        return self.__engine
+
+    @property
+    def parameters(self) -> Optional[Parameters]:
+        if self.__param is not None:
+            return self.__param
+        if self.__engine is not None:
+            return self.__engine.params
+        return None
+
+    @property
+    def protocol(self) -> Optional[ProtocolChecker]:
+        if self.__proto is not None:
+            return self.__proto
+        if self.__engine is not None:
+            return self.__engine.protocol
+        return None
 
     @staticmethod
     def __get_parameters(args: argparse.Namespace, variable: str) -> Parameters:
