@@ -367,12 +367,16 @@ class Parameters:
 
     @classmethod
     def _load_external(cls, filename: Path, variable: str) -> Union[Parameters, Callable[..., Parameters]]:
-        tried = []
+        tried = [str(filename)]
         if not (filename.is_file() or filename.is_absolute()):
-            tried.append(str(filename))
-            filename = Path(inspect.stack()[1].filename).parent.joinpath(filename)
+            for stackframe in inspect.stack()[2:]:
+                stackfile = Path(stackframe.filename).parent.joinpath(filename)
+                tried.append(str(filename))
+                if stackfile.is_file():
+                    filename = stackfile
+                    break
+       
         if not filename.is_file():
-            tried.append(str(filename))
             raise FileNotFoundError(f'Could not find file, tried following paths: {tried}')
 
         try:
