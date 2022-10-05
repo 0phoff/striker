@@ -73,7 +73,6 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
                 level=logging.NOTSET,
                 format='%(levelname)-8s %(message)s',
                 datefmt='[%X]',
-                style='{',
             )
 
     def setup_filehandler(self) -> None:
