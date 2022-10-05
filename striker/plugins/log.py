@@ -68,11 +68,15 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
                     )],
                 )
         else:
+            handler = logging.StreamHandler()
+            handler.setLevel(self.level)
+
             logging.basicConfig(
                 force=True,
                 level=logging.NOTSET,
                 format='%(levelname)-8s %(message)s',
                 datefmt='[%X]',
+                handlers=[handler],
             )
 
     def setup_filehandler(self) -> None:
