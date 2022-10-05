@@ -2,6 +2,7 @@ from typing import Literal, Protocol, Union, Optional
 
 from contextlib import suppress
 import logging
+import sys
 from pathlib import Path
 from ..core import Plugin, hooks
 from .._engine import Engine
@@ -51,19 +52,28 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         if not self.rich:
             return
 
-        with suppress(ImportError):
-            from rich.logging import RichHandler
+        if sys.stdout.isatty():
+            with suppress(ImportError):
+                from rich.logging import RichHandler
 
+                logging.basicConfig(
+                    force=True,
+                    level=logging.NOTSET,
+                    format='%(message)s',
+                    datefmt='[%X]',
+                    handlers=[RichHandler(
+                        level=self.level,
+                        rich_tracebacks=True,
+                        tracebacks_suppress=['striker'],
+                    )],
+                )
+        else:
             logging.basicConfig(
                 force=True,
                 level=logging.NOTSET,
-                format='%(message)s',
+                format='%(levelname)-8s %(message)s',
                 datefmt='[%X]',
-                handlers=[RichHandler(
-                    level=self.level,
-                    rich_tracebacks=True,
-                    tracebacks_suppress=['striker'],
-                )],
+                style='{',
             )
 
     def setup_filehandler(self) -> None:
