@@ -103,8 +103,8 @@ class Engine(
     ) -> None:
         """ This method runs all hooks in mixins, plugins and on the engine itself. """
         self.hooks.run(type=type, index=index, args=args, kwargs=kwargs)
-        self.mixins.run(type=type, index=index, args=args, kwargs=kwargs)
         self.plugins.run(type=type, index=index, args=args, kwargs=kwargs)
+        self.mixins.run(type=type, index=index, args=args, kwargs=kwargs)
 
     def quit(self) -> None:
         if not self.__quit__:
