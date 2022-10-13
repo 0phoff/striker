@@ -28,6 +28,9 @@ class TrainEngineMixin(EngineMixin, protocol=ParentProtocol):
         assert self.name == 'train', f'{self.__class__.__name__} can only be used for training'
 
     def __call__(self) -> None:
+        if self.quit:
+            return
+
         while True:
             if self.quit:
                 return

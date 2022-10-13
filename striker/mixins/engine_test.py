@@ -48,6 +48,9 @@ class TestEngineMixin(EngineMixin):
         assert self.name in ('test', 'validation'), f'{self.__class__.__name__} can only be used for validating or testing'
 
     def __call__(self) -> None:
+        if self.quit:
+            return
+
         dataloader = getattr(self.parent, f'{self.name}_loader')
         mixin = getattr(self.parent, f'mixin_loop_{self.name}')
 
