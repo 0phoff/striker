@@ -1,9 +1,11 @@
 from typing import Protocol, Literal, Union, cast
+import logging
 
-from ..core import EngineMixin, hooks
+from ..core import EngineMixin, hooks, Hook
 from .engine_train import TrainEngineMixin
 
 __all__ = ['TrainValidationEngineMixin']
+log = logging.getLogger(__name__)
 
 
 class ParentProtocol(TrainEngineMixin.__protocol__, Protocol):      # type: ignore
@@ -31,7 +33,15 @@ class TrainValidationEngineMixin(TrainEngineMixin, protocol=ParentProtocol):
     __type_check__: Literal['none', 'log', 'raise'] = 'raise'
 
     def __init__(self, validation_mode: Literal['batch', 'epoch'] = 'epoch') -> None:
-        self.validation_mode = validation_mode
+        # Make sure validation_mode is either 'batch' or 'epoch'
+        self.validation_mode = 'batch' if validation_mode.lower() == 'batch' else 'epoch'
+
+    def __call__(self) -> None:
+        super().__call__()
+        if isinstance(self.run_validation, Hook):
+            # If final epoch/batch is in validation_rate, it still gets cancelled because `self.quit == True`
+            log.info('Running final validation...')
+            self.run_validation()
 
     @hooks.engine_begin
     def setup_validation_hook(self, entry: Literal['train', 'validation', 'test']) -> None:
