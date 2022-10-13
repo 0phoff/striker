@@ -32,6 +32,8 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
 
     Args:
         mode: Whether to store backups at an epoch or batch interval (specified by ``backup_rate`` in the parent). Default **epoch**
+        extension: File extension to use; Default **'.param.pt'**
+        final: Whether to save a final file at the end of training; Default **True**
 
     You can also call the save function manually, to create a backup in the correct folder (and with the correct extension):
 
@@ -48,9 +50,11 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
         self,
         mode: Literal['batch', 'epoch'] = 'epoch',
         extension: str = '.param.pt',
+        final: bool = True,
     ) -> None:
         self.backup_mode = mode
         self.extension = extension
+        self.final = final
 
     def save(self, name: str) -> None:
         backup_path = self.backup_folder / f'{name}'
@@ -81,14 +85,18 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
 
         backup_rate = getattr(self.parent, 'backup_rate', None)
         if backup_rate is None:
-            log.warn('"backup_rate" is None, so no backups will be taken.')
-            self.enabled = False
+            log.warn('"backup_rate" is None, so no intermediate backups will be taken.')
             return
 
         if self.backup_mode == 'batch':
             self.hooks.train_batch_end[backup_rate](self.run_backup)
         else:
             self.hooks.train_epoch_end[backup_rate](self.run_backup)
+
+    @hooks.engine_end
+    def final_backup(self, entry: Literal['train', 'validation', 'test']) -> None:
+        if self.final and entry == 'train':
+            self.save('final')
 
     def run_backup(self, index: int) -> None:
         self.save(f'backup-{self.backup_mode}-{index:05d}')
