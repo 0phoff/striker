@@ -4,6 +4,7 @@ if TYPE_CHECKING:
 
 from datetime import timedelta
 from rich.text import Text
+from rich.table import Column
 from rich.progress import (     # type: ignore[attr-defined]
     Progress,
     ProgressColumn,
@@ -53,7 +54,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
         self.progress = Progress(
             TextColumn('{task.description}'),
             BarColumn(),
-            MofNCompleteColumn(separator=' / '),
+            MofNCompleteColumn(separator=' / ', table_column=Column(justify='right')),
             TimeColumn(),
             SpeedColumn(),
             TextColumn('{task.fields[post_text]}'),
@@ -97,78 +98,68 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
         self.progress.console.clear_live()
 
     @hooks.train_epoch_begin
-    def train_epoch_start(self) -> None:
-        self.progress.reset(
-            self.p_batch,
-            visible=True,
-            total=self.parent.mixin_loop_train.num_batches,
-            post_text=self.train_batch_text,
-        )
-        self.progress.refresh()
+    def train_epoch_begin(self) -> None:
+        self.progress.reset(self.p_batch, visible=True, total=self.parent.mixin_loop_train.num_batches)
+        self.refresh()
 
     @hooks.train_batch_end
     def train_batch_end(self) -> None:
-        self.progress.update(
-            self.p_batch,
-            advance=1,
-            post_text=self.train_batch_text,
-            refresh=True,
-        )
+        self.progress.update(self.p_batch, advance=1)
+        self.refresh()
 
     @hooks.train_epoch_end
     def train_epoch_end(self, epoch: int) -> None:
-        self.progress.update(
-            self.p_epoch,
-            completed=epoch,
-            post_text=self.train_epoch_text,
-            refresh=True,
-        )
+        self.progress.update(self.p_epoch, completed=epoch)
+        self.refresh()
 
     @hooks.validation_epoch_begin
-    def validation_epoch_start(self) -> None:
-        self.progress.reset(
-            self.p_validation,
-            visible=True,
-            total=self.parent.mixin_loop_validation.num_batches,
-            post_text=self.validation_text,
-        )
-        self.progress.refresh()
+    def validation_epoch_begin(self) -> None:
+        self.progress.reset(self.p_validation, visible=True, total=self.parent.mixin_loop_validation.num_batches)
+        self.refresh()
 
     @hooks.validation_batch_end
     def validation_batch_end(self) -> None:
-        self.progress.update(
-            self.p_validation,
-            advance=1,
-            post_text=self.validation_text,
-            refresh=True,
-        )
+        self.progress.update(self.p_validation, advance=1)
+        self.refresh()
 
     @hooks.validation_epoch_end
     def validation_epoch_end(self) -> None:
-        self.progress.update(self.p_validation, visible=False, refresh=True)
+        self.progress.update(self.p_validation, visible=False)
+        self.refresh()
 
     @hooks.test_epoch_begin
-    def test_epoch_start(self) -> None:
-        self.progress.reset(
-            self.p_test,
-            visible=True,
-            total=self.parent.mixin_loop_test.num_batches,
-            post_text=self.test_text,
-        )
-        self.progress.refresh()
+    def test_epoch_begin(self) -> None:
+        self.progress.reset(self.p_test, visible=True, total=self.parent.mixin_loop_test.num_batches)
+        self.refresh()
 
     @hooks.test_batch_end
     def test_batch_end(self) -> None:
-        self.progress.update(
-            self.p_test,
-            advance=1,
-            post_text=self.test_text,
-            refresh=True,
-        )
+        self.progress.update(self.p_test, advance=1)
+        self.refresh()
 
     @hooks.test_epoch_end
     def test_epoch_end(self) -> None:
-        self.progress.update(self.p_test, visible=False, refresh=True)
+        self.progress.update(self.p_test, visible=False)
+        self.refresh()
+
+    def refresh(self):
+        p_epoch = getattr(self, 'p_epoch', None)
+        if p_epoch is not None:
+            self.progress.update(p_epoch, post_text=self.train_epoch_text)
+
+        p_batch = getattr(self, 'p_batch', None)
+        if p_batch is not None:
+            self.progress.update(p_batch, post_text=self.train_batch_text)
+
+        p_validation = getattr(self, 'p_validation', None)
+        if p_validation is not None:
+            self.progress.update(p_validation, post_text=self.validation_text)
+
+        p_test = getattr(self, 'p_test', None)
+        if p_test is not None:
+            self.progress.update(p_test, post_text=self.test_text)
+
+        self.progress.refresh()
 
     @property
     def train_epoch_text(self) -> str:
@@ -215,21 +206,27 @@ class SpeedColumn(ProgressColumn):
             return Text('', style='progress.remaining')
 
         if speed < 1:
+            speed = 1 / speed
             unit, suffix = filesize.pick_unit_and_suffix(
-                int(1 / speed),
-                ['', '×10³', '×10⁶', '×10⁹', '×10¹²'],
-                1000,
+                int(speed),
+                ['s', 'm', 'h'],
+                60,
             )
-            data_speed = 1 / (speed * unit)
-            return Text(f'({data_speed:.1f}{suffix} s/it)', style='progress.remaining')
+            speed /= unit
+            if speed >= 36:
+                speed /= 24
+                suffix = 'd'
+
+            return Text(f'({speed:.1f} {suffix}/it)', style='progress.remaining')
         else:
             unit, suffix = filesize.pick_unit_and_suffix(
                 int(speed),
                 ['', '×10³', '×10⁶', '×10⁹', '×10¹²'],
                 1000,
             )
-            data_speed = speed / unit
-            return Text(f'({data_speed:.1f}{suffix} it/s)', style='progress.remaining')
+            speed /= unit
+
+            return Text(f'({speed:.1f}{suffix} it/s)', style='progress.remaining')
 
     def render(self, task: 'Task') -> Text:
         return self.render_speed(task.finished_speed or task.speed)
