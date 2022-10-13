@@ -48,7 +48,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
     __type_check__: Literal['none', 'log', 'raise'] = 'none'
     parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def start_progress(self, entry: Literal['train', 'test', 'validation']) -> None:
         self.progress = Progress(
             TextColumn('{task.description}'),
@@ -96,7 +96,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
         self.progress.stop()
         self.progress.console.clear_live()
 
-    @hooks.train_epoch_start
+    @hooks.train_epoch_begin
     def train_epoch_start(self) -> None:
         self.progress.reset(
             self.p_batch,
@@ -124,7 +124,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
             refresh=True,
         )
 
-    @hooks.validation_epoch_start
+    @hooks.validation_epoch_begin
     def validation_epoch_start(self) -> None:
         self.progress.reset(
             self.p_validation,
@@ -147,7 +147,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
     def validation_epoch_end(self) -> None:
         self.progress.update(self.p_validation, visible=False, refresh=True)
 
-    @hooks.test_epoch_start
+    @hooks.test_epoch_begin
     def test_epoch_start(self) -> None:
         self.progress.reset(
             self.p_test,

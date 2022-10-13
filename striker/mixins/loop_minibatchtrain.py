@@ -26,12 +26,12 @@ class MiniBatchTrainLoopMixin(BatchTrainLoopMixin, protocol=ParentProtocol):
         self.accumulated_batches = 0
 
     def loop(self, dataloader: DataLoader[Any]) -> Optional[Iterator[None]]:
-        self.parent.run_hook(type='train_epoch_start', index=self.parent.epoch + 1, args=(self.parent.epoch + 1,))
+        self.parent.run_hook(type='train_epoch_begin', index=self.parent.epoch + 1, args=(self.parent.epoch + 1,))
 
         accumulated_loss = 0
         for data in dataloader:
             if self.accumulated_batches == 0:
-                self.parent.run_hook(type='train_batch_start', index=self.parent.batch + 1, args=(self.parent.batch + 1))
+                self.parent.run_hook(type='train_batch_begin', index=self.parent.batch + 1, args=(self.parent.batch + 1))
 
             # MiniBatch
             self.parent.run_hook(type='data_batch', args=(data,))

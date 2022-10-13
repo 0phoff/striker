@@ -34,7 +34,7 @@ class QuitPlugin(Plugin, protocol=ParentProtocol):
     def __init__(self, explode: bool = True):
         self.explode = explode
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def setup_quit_hook(self, entry: Literal['train', 'validation', 'test']) -> None:
         if entry == 'train':
             max_epochs = getattr(self.parent, 'max_epochs', None)

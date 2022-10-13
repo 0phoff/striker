@@ -60,7 +60,7 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
         self.parent.params.save(backup_path)
         log.info('Saved backup: %s', backup_path)
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def setup_backup_hook(self, entry: Literal['train', 'validation', 'test']) -> None:
         if entry != 'train':
             self.enabled = False

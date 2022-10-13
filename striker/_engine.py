@@ -19,8 +19,8 @@ T = TypeVar('T')
 
 
 class ParentProtocol(Protocol):
-    @hooks.engine_start
-    def engine_start(self, entry: Literal['train', 'test', 'validation']) -> None:
+    @hooks.engine_begin
+    def engine_begin(self, entry: Literal['train', 'test', 'validation']) -> None:
         ...
 
     @hooks.engine_end
@@ -71,7 +71,7 @@ class Engine(
         self.__check()
         self.__entry__ = 'train'
 
-        self.run_hook(type='engine_start', args=[self.__entry__])
+        self.run_hook(type='engine_begin', args=[self.__entry__])
         self.mixin_engine_train()
         self.run_hook(type='engine_end', args=[self.__entry__])
 
@@ -80,7 +80,7 @@ class Engine(
         assert self.mixin_engine_validation is not None, 'EngineMixin required for validation'
         self.__entry__ = 'validation'
 
-        self.run_hook(type='engine_start', args=[self.__entry__])
+        self.run_hook(type='engine_begin', args=[self.__entry__])
         self.mixin_engine_validation()
         self.run_hook(type='engine_end', args=[self.__entry__])
 
@@ -89,7 +89,7 @@ class Engine(
         assert self.mixin_engine_test is not None, 'EngineMixin required for test'
         self.__entry__ = 'test'
 
-        self.run_hook(type='engine_start', args=[self.__entry__])
+        self.run_hook(type='engine_begin', args=[self.__entry__])
         self.mixin_engine_test()
         self.run_hook(type='engine_end', args=[self.__entry__])
 

@@ -41,8 +41,8 @@ class ParentProtocol(Protocol):
         Usually you would call ``optimizer.step()`` and ``optimizer.zero_grad()`` here.
         """
 
-    @hooks.train_epoch_start
-    def train_epoch_start(self, epoch: int) -> None:
+    @hooks.train_epoch_begin
+    def train_epoch_begin(self, epoch: int) -> None:
         """
         Hook that gets called at the start of every epoch.
 
@@ -62,8 +62,8 @@ class ParentProtocol(Protocol):
             epoch: Number of the epoch we end.
         """
 
-    @hooks.train_batch_start
-    def train_batch_start(self, batch: int) -> None:
+    @hooks.train_batch_begin
+    def train_batch_begin(self, batch: int) -> None:
         """
         Hook that gets called at the start of every batch.
 
@@ -88,7 +88,7 @@ class ParentProtocol(Protocol):
     def data_batch(self, data: Any) -> None:
         """
         Hook that gets called with for every batch of data, before using it.
-        The difference with the :meth:`ParentProtocol.train_batch_start` hook is that we pass the data as an argument
+        The difference with the :meth:`ParentProtocol.train_batch_begin` hook is that we pass the data as an argument
         and that most :class:`~striker.core.LoopMixin` provide this hook.
 
         Args:
@@ -102,16 +102,16 @@ class BatchTrainLoopMixin(LoopMixin, protocol=ParentProtocol):
     This is the default training LoopMixin.
     """
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def assert_name(self) -> None:
         assert self.name == 'train', f'{self.__class__.__name__} can only be used for training'
 
     def loop(self, dataloader: DataLoader[Any]) -> Optional[Iterator[None]]:
-        self.parent.run_hook(type='train_epoch_start', index=self.parent.epoch + 1, args=(self.parent.epoch + 1,))
+        self.parent.run_hook(type='train_epoch_begin', index=self.parent.epoch + 1, args=(self.parent.epoch + 1,))
 
         for data in dataloader:
             self.parent.run_hook(type='data_batch', args=(data,))
-            self.parent.run_hook(type='train_batch_start', index=self.parent.batch + 1, args=(self.parent.batch + 1))
+            self.parent.run_hook(type='train_batch_begin', index=self.parent.batch + 1, args=(self.parent.batch + 1))
 
             loss = self.parent.forward(data)
             loss.backward()

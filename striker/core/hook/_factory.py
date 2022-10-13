@@ -11,7 +11,7 @@ class HookFactory:
 
     Example:
         >>> class Engine(striker.Engine):
-        ... @striker.hooks.engine_start
+        ... @striker.hooks.engine_begin
         ... def startup_hook(self):
         ...     # Runs on startup
         ...     pass

@@ -33,7 +33,7 @@ class TrainValidationEngineMixin(TrainEngineMixin, protocol=ParentProtocol):
     def __init__(self, validation_mode: Literal['batch', 'epoch'] = 'epoch') -> None:
         self.validation_mode = validation_mode
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def setup_validation_hook(self, entry: Literal['train', 'validation', 'test']) -> None:
         if entry == 'train':
             validation_rate = getattr(self.parent, 'validation_rate', slice(None, None, 1))

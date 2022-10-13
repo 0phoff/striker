@@ -43,7 +43,7 @@ class TestEngineMixin(EngineMixin):
         elif self.name == 'test':
             self.__protocol__ = ParentProtocolTest
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def assert_name(self) -> None:
         assert self.name in ('test', 'validation'), f'{self.__class__.__name__} can only be used for validating or testing'
 

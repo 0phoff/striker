@@ -24,7 +24,7 @@ class DevicePlugin(Plugin, protocol=ParentProtocol):
     __type_check__: Literal['none', 'log', 'raise'] = 'none'
     parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def cast_params(self) -> None:
         self.device = torch.device(getattr(self.parent, 'device', 'cpu'))
         self.parent.to(self.device)

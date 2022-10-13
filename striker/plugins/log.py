@@ -40,7 +40,7 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         self.rich = rich_handler
         self.level = rich_level
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def setup_logging(self) -> None:
         self.setup_streamhandler()
         self.setup_filehandler()

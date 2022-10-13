@@ -33,7 +33,7 @@ class ParentProtocol(Protocol):
     def data_batch(self, data: Any) -> None:
         """
         Hook that gets called with for every batch of data, before using it.
-        The difference with the :meth:`ParentProtocol.train_batch_start` hook is that we pass the data as an argument
+        The difference with the :meth:`ParentProtocol.train_batch_begin` hook is that we pass the data as an argument
         and that most :class:`~striker.core.LoopMixin` provide this hook.
 
         Args:
@@ -42,8 +42,8 @@ class ParentProtocol(Protocol):
 
 
 class ParentProtocolTest(ParentProtocol):
-    @hooks.test_epoch_start
-    def test_epoch_start(self) -> None:
+    @hooks.test_epoch_begin
+    def test_epoch_begin(self) -> None:
         """
         Hook that gets called at the start of an epoch.
         """
@@ -57,8 +57,8 @@ class ParentProtocolTest(ParentProtocol):
             output: Final output from :meth:`ParentProtocol.post()`.
         """
 
-    @hooks.test_batch_start
-    def test_batch_start(self, batch: int) -> None:
+    @hooks.test_batch_begin
+    def test_batch_begin(self, batch: int) -> None:
         """
         Hook that gets called at the start of every batch.
 
@@ -78,8 +78,8 @@ class ParentProtocolTest(ParentProtocol):
 
 
 class ParentProtocolValidation(ParentProtocol):
-    @hooks.validation_epoch_start
-    def validation_epoch_start(self) -> None:
+    @hooks.validation_epoch_begin
+    def validation_epoch_begin(self) -> None:
         """
         Hook that gets called at the start of an epoch.
         """
@@ -93,8 +93,8 @@ class ParentProtocolValidation(ParentProtocol):
             output: Final output from :meth:`ParentProtocol.post()`.
         """
 
-    @hooks.validation_batch_start
-    def validation_batch_start(self, batch: int) -> None:
+    @hooks.validation_batch_begin
+    def validation_batch_begin(self, batch: int) -> None:
         """
         Hook that gets called at the start of every batch.
 
@@ -124,17 +124,17 @@ class TestLoopMixin(LoopMixin, protocol=ParentProtocol):
         elif self.name == 'test':
             self.__protocol__ = ParentProtocolTest
 
-    @hooks.engine_start
+    @hooks.engine_begin
     def assert_name(self) -> None:
         assert self.name in ('test', 'validation'), f'{self.__class__.__name__} can only be used for validating or testing'
 
     def loop(self, dataloader: DataLoader[Any]) -> Optional[Iterator[None]]:
-        self.parent.run_hook(type=f'{self.name}_epoch_start')
+        self.parent.run_hook(type=f'{self.name}_epoch_begin')
 
         outputs = []
         for batch, data in enumerate(dataloader):
             self.parent.run_hook(type='data_batch', args=(data,))
-            self.parent.run_hook(type=f'{self.name}_batch_start', index=batch + 1, args=(batch + 1,))
+            self.parent.run_hook(type=f'{self.name}_batch_begin', index=batch + 1, args=(batch + 1,))
             outputs.append(self.parent.infer(data))
             self.parent.run_hook(type=f'{self.name}_batch_end', index=batch, args=(batch, outputs[-1]))
             yield
