@@ -23,8 +23,9 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
     Args:
         logger_name: Name of the logger for which we want to store the logs in a file. Default **root logger / all loggers**
         file_mode: How to open the log file. Default **'a'**
-        rich_handler: Wether to enabled the :class:`~rich.logging.RichHandler` if it is available; Default **true**
-        rich_level: Filter level for the :class:`~rich.logging.RichHandler`; Default **0**
+        file_level: Filter level for the logging file; Default **0**
+        rich_enable: Wether to enabled the :class:`~rich.logging.RichHandler` if it is available; Default **true**
+        rich_level: Filter level for the :class:`~rich.logging.RichHandler`; Default **INFO**
     """
     parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
 
@@ -32,13 +33,15 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         self,
         logger_name: str = '',
         file_mode: Literal['a', 'w'] = 'a',
-        rich_handler: bool = True,
+        file_level: int = logging.NOTSET,
+        rich_enable: bool = True,
         rich_level: int = logging.INFO,
     ):
         self.logger = logging.getLogger(logger_name)
-        self.mode = file_mode
-        self.rich = rich_handler
-        self.level = rich_level
+        self.file_mode = file_mode
+        self.file_level = file_level
+        self.rich_enable = rich_enable
+        self.rich_level = rich_level
 
     @hooks.engine_begin
     def setup_logging(self) -> None:
@@ -49,36 +52,26 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         self.enabled = False
 
     def setup_streamhandler(self) -> None:
-        if not self.rich:
+        if not self.rich_enable:
             return
 
+        handler = None
         if sys.stdout.isatty():
             with suppress(ImportError):
                 from rich.logging import RichHandler
-
-                logging.basicConfig(
-                    force=True,
-                    level=logging.NOTSET,
-                    format='%(message)s',
-                    datefmt='[%X]',
-                    handlers=[RichHandler(
-                        level=self.level,
-                        rich_tracebacks=True,
-                        tracebacks_suppress=['striker'],
-                    )],
-                )
-        else:
+                handler = RichHandler(rich_tracebacks=True, tracebacks_suppress=['striker'])
+                handler.setFormatter(logging.Formatter('%(message)s', '[%X]'))
+        if handler is None:
             handler = logging.StreamHandler()
-            handler.setLevel(self.level)
+            handler.setFormatter(logging.Formatter('%(levelname)-8s %(message)s', '[%X]'))
 
-            logging.basicConfig(
-                force=True,
-                level=logging.NOTSET,
-                format='%(levelname)-8s %(message)s',
-                datefmt='[%X]',
-                handlers=[handler],
-            )
-
+        handler.setLevel(self.rich_level)
+        logging.basicConfig(
+            force=True,
+            level=logging.NOTSET,
+            handlers=[handler],
+        )
+        
     def setup_filehandler(self) -> None:
         log_file = getattr(self.parent, 'log_file', None)
         if log_file is None:
@@ -90,8 +83,8 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
             log.info('log_file folder "%s" does not exist, creating now...', self.log_file.parent)
             self.log_file.parent.mkdir(parents=True)
 
-        handler = logging.FileHandler(filename=self.log_file, mode=self.mode)
-        handler.setLevel(logging.NOTSET)
+        handler = logging.FileHandler(filename=self.log_file, mode=self.file_mode)
+        handler.setLevel(self.file_level)
         handler.setFormatter(logging.Formatter(
             fmt='%(levelname)s %(asctime)s [%(filename)s:%(lineno)d] | %(message)s',
             datefmt='%x %X',
