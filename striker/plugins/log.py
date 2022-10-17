@@ -55,7 +55,7 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         if not self.rich_enable:
             return
 
-        handler = None
+        handler: Optional[logging.Handler] = None
         if sys.stdout.isatty():
             with suppress(ImportError):
                 from rich.logging import RichHandler
@@ -71,7 +71,7 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
             level=logging.NOTSET,
             handlers=[handler],
         )
-        
+
     def setup_filehandler(self) -> None:
         log_file = getattr(self.parent, 'log_file', None)
         if log_file is None:

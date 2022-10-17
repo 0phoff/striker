@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal, Protocol, Optional
+from typing import TYPE_CHECKING, Literal, Protocol, Optional, cast
 if TYPE_CHECKING:
     from rich.progress import Task, TaskID
 
@@ -50,7 +50,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
     PRINT_TOTAL_MIN: int = 30 * 60
     PRINT_TOTAL_MAX: int = 10 * 60 * 60
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tty = sys.stdout.isatty()
 
     @hooks.engine_begin
@@ -211,15 +211,15 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
                 texts = [task_epoch.description]
 
                 # Completed
-                completed_epoch = str(self.progress.columns[2].render(task_epoch)).strip()
-                completed_batch = str(self.progress.columns[2].render(task_batch)).strip()
+                completed_epoch = str(cast(ProgressColumn, self.progress.columns[2]).render(task_epoch)).strip()
+                completed_batch = str(cast(ProgressColumn, self.progress.columns[2]).render(task_batch)).strip()
                 texts.append(f'{completed_epoch} {completed_batch}')
 
                 # Time
-                texts.append(str(self.progress.columns[3].render(task_batch if self.max_batches else task_epoch)).strip())
+                texts.append(str(cast(ProgressColumn, self.progress.columns[3]).render(task_batch if self.max_batches else task_epoch)).strip())
 
                 # Post Text
-                texts.append(str(self.progress.columns[5].render(task_batch)).strip())
+                texts.append(str(cast(ProgressColumn, self.progress.columns[5]).render(task_batch)).strip())
 
                 print(' | '.join(t for t in texts if len(t)), flush=True)
 
@@ -233,13 +233,13 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
                 texts = [task.description]
 
                 # Completed
-                texts.append(str(self.progress.columns[2].render(task)).strip())
+                texts.append(str(cast(ProgressColumn, self.progress.columns[2]).render(task)).strip())
 
                 # Time
-                texts.append(str(self.progress.columns[3].render(task)).strip())
+                texts.append(str(cast(ProgressColumn, self.progress.columns[3]).render(task)).strip())
 
                 # Post Text
-                texts.append(str(self.progress.columns[5].render(task)).strip())
+                texts.append(str(cast(ProgressColumn, self.progress.columns[5]).render(task)).strip())
 
                 print(' | '.join(t for t in texts if len(t)), flush=True)
 
@@ -254,6 +254,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
 
         remaining = task.time_remaining
         elapsed = task.elapsed
+        delay: float = 0
         if elapsed is not None and elapsed >= self.PRINT_TOTAL_MAX:
             # Elapsed is already bigger than max, so delay should be max
             delay = self.PRINT_DELAY_MAX
@@ -313,9 +314,9 @@ class SpeedColumn(ProgressColumn):
             unit, suffix = filesize.pick_unit_and_suffix(int(speed), ['s', 'm', 'h'], 60)
             speed /= unit
 
-            if suffix == 'h' and speed >= 36:
+            if suffix == 'h' and speed >= 36:   # type: ignore[operator]
                 # Over 1.5 days, so we show in days instead of hours
-                speed /= 24
+                speed /= 24     # type: ignore[operator]
                 suffix = 'd'
 
             return Text(f'({speed:.1f} {suffix}/it)', style='progress.remaining')
