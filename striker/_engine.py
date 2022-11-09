@@ -72,8 +72,10 @@ class Engine(
         self.__entry__ = 'train'
 
         self.run_hook(type='engine_begin', args=[self.__entry__])
-        self.mixin_engine_train()
-        self.run_hook(type='engine_end', args=[self.__entry__])
+        try:
+            self.mixin_engine_train()
+        finally:
+            self.run_hook(type='engine_end', args=[self.__entry__])
 
     def validation(self) -> None:
         self.__check()
@@ -81,8 +83,10 @@ class Engine(
         self.__entry__ = 'validation'
 
         self.run_hook(type='engine_begin', args=[self.__entry__])
-        self.mixin_engine_validation()
-        self.run_hook(type='engine_end', args=[self.__entry__])
+        try:
+            self.mixin_engine_validation()
+        finally:
+            self.run_hook(type='engine_end', args=[self.__entry__])
 
     def test(self) -> None:
         self.__check()
@@ -90,8 +94,10 @@ class Engine(
         self.__entry__ = 'test'
 
         self.run_hook(type='engine_begin', args=[self.__entry__])
-        self.mixin_engine_test()
-        self.run_hook(type='engine_end', args=[self.__entry__])
+        try:
+            self.mixin_engine_test()
+        finally:
+            self.run_hook(type='engine_end', args=[self.__entry__])
 
     def run_hook(
         self,
