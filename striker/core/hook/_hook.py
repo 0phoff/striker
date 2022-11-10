@@ -21,11 +21,15 @@ class HookDecorator:
         self.parent = parent
         self.indices: tuple[slice, ...] = (slice(None, None, 1),)
 
-    def __getitem__(self, *indices: Union[int, slice]) -> HookDecorator:
+    def __getitem__(self, indices: Union[int, slice, tuple[Union[int, slice], ...]]) -> HookDecorator:
+        if isinstance(indices, (int, slice)):
+            indices = (indices,)
+
         self.indices = tuple(
             idx if isinstance(idx, slice) else slice(idx, idx + 1)
             for idx in indices
         )
+
         return self
 
     def __call__(self, fn: Callable[..., None]) -> Hook:
