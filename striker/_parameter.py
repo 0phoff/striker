@@ -412,6 +412,15 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
     if cast_type in (int, float, complex):
         return cast_type(param)
 
+    # Boolean: check for a few literal strings that mean true
+    if cast_type == bool:
+        if param.lower() in ('true', 't', 'yes', 'y', '1'):
+            return True
+        elif param.lower() in ('false', 'f', 'no', 'n', '0'):
+            return False
+        else:
+            raise ValueError(f'Could not convert "{param}" to bool')
+
     # None: check that string is 'none'
     if cast_type == type(None):     # NOQA: E721 - isinstance with a type causes a TypeError
         if param.lower() != 'none':
