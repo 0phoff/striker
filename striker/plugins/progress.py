@@ -2,6 +2,9 @@ from typing import TYPE_CHECKING, Literal, Protocol, Optional, cast
 if TYPE_CHECKING:
     from rich.progress import Task, TaskID
 
+import time
+import datetime
+import logging
 import sys
 from rich.text import Text
 from rich.table import Column
@@ -17,6 +20,7 @@ from ..core import Plugin, hooks
 from .._engine import Engine
 
 __all__ = ['ProgressBarPlugin']
+log = logging.getLogger(__name__)
 
 
 class ParentProtocol(Protocol):
@@ -55,6 +59,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
 
     @hooks.engine_begin
     def start_progress(self, entry: Literal['train', 'test', 'validation']) -> None:
+        self.__time_start = time.perf_counter()
         max_epochs = getattr(self.parent, 'max_epochs', None)
         max_batches = getattr(self.parent, 'max_batches', None)
         self.max_batches = max_batches is not None
@@ -116,10 +121,15 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
             self.progress.start()
 
     @hooks.engine_end
-    def stop_progress(self) -> None:
+    def stop_progress(self, entry: Literal['train', 'test', 'validation']) -> None:
+        self.__time_stop = time.perf_counter()
+
         if self.tty:
             self.progress.stop()
             self.progress.console.clear_live()
+
+        delta = round(self.__time_stop - self.__time_start)
+        log.info('Engine %s run took %s', entry, datetime.timedelta(seconds=delta))
 
     @hooks.train_epoch_begin
     def train_epoch_begin(self) -> None:
