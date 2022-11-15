@@ -3,7 +3,7 @@ from typing import Protocol, Optional, Any
 from torch.utils.data import DataLoader
 from ..core import LoopMixin, EngineMixin, hooks
 
-__all__ = ['TestEngineMixin']
+__all__ = ['Test_EngineMixin']
 
 
 class ParentProtocolTest(Protocol):
@@ -32,7 +32,7 @@ class ParentProtocolValidation(Protocol):
     """
 
 
-class TestEngineMixin(EngineMixin):
+class Test_EngineMixin(EngineMixin):
     """
     EngineMixin that runs through a dataloader once, which is mainly used for testing and validation.
     """

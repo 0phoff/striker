@@ -3,7 +3,7 @@ from typing import Iterator, Protocol, Optional, Any
 from torch.utils.data import DataLoader
 from ..core import LoopMixin, hooks
 
-__all__ = ['TestLoopMixin']
+__all__ = ['Test_LoopMixin']
 
 
 class ParentProtocol(Protocol):
@@ -113,7 +113,7 @@ class ParentProtocolValidation(ParentProtocol):
         """
 
 
-class TestLoopMixin(LoopMixin, protocol=ParentProtocol):
+class Test_LoopMixin(LoopMixin):
     """
     LoopMixin that runs a model over a dataset for evaluation.
     """

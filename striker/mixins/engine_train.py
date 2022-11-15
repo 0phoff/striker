@@ -3,7 +3,7 @@ from typing import Any, Protocol
 from torch.utils.data import DataLoader
 from ..core import LoopMixin, EngineMixin, hooks
 
-__all__ = ['TrainEngineMixin']
+__all__ = ['Train_EngineMixin']
 
 
 class ParentProtocol(Protocol):
@@ -19,7 +19,7 @@ class ParentProtocol(Protocol):
     """
 
 
-class TrainEngineMixin(EngineMixin, protocol=ParentProtocol):
+class Train_EngineMixin(EngineMixin, protocol=ParentProtocol):
     """
     EngineMixin that keeps running through a dataset forever, which is mainly used for training.
     """

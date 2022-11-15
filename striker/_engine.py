@@ -10,8 +10,8 @@ from types import FrameType
 from ._parameter import Parameters
 from .core import HookParent, PluginParent, MixinParent, hooks
 from .core import EngineMixin, LoopMixin
-from .mixins.engine_train import TrainEngineMixin
-from .mixins.loop_batchtrain import BatchTrainLoopMixin
+from .mixins.engine_train import Train_EngineMixin
+from .mixins.loop_batchtrain import BatchTrain_LoopMixin
 
 __all__ = ['Engine']
 log = logging.getLogger(__name__)
@@ -40,8 +40,8 @@ class Engine(
     __init_done: bool = False
 
     # Mixins
-    mixin_engine_train: EngineMixin = TrainEngineMixin()
-    mixin_loop_train: LoopMixin = BatchTrainLoopMixin()
+    mixin_engine_train: EngineMixin = Train_EngineMixin()
+    mixin_loop_train: LoopMixin = BatchTrain_LoopMixin()
     mixin_engine_validation: Optional[EngineMixin] = None
     mixin_engine_test: Optional[EngineMixin] = None
 

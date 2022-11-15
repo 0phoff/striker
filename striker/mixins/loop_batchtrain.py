@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch import Tensor
 from ..core import LoopMixin, hooks
 
-__all__ = ['BatchTrainLoopMixin']
+__all__ = ['BatchTrain_LoopMixin']
 
 
 class ParentProtocol(Protocol):
@@ -96,7 +96,7 @@ class ParentProtocol(Protocol):
         """
 
 
-class BatchTrainLoopMixin(LoopMixin, protocol=ParentProtocol):
+class BatchTrain_LoopMixin(LoopMixin, protocol=ParentProtocol):
     """
     LoopMixin that trains a model on batches.
     This is the default training LoopMixin.

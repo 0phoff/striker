@@ -1,17 +1,17 @@
 from typing import Any, Iterator, Optional, Protocol
 
 from torch.utils.data import DataLoader
-from .loop_batchtrain import BatchTrainLoopMixin
+from .loop_batchtrain import BatchTrain_LoopMixin
 
-__all__ = ['MiniBatchTrainLoopMixin']
+__all__ = ['MiniBatchTrain_LoopMixin']
 
 
-class ParentProtocol(BatchTrainLoopMixin.__protocol__, Protocol):       # type: ignore
+class ParentProtocol(BatchTrain_LoopMixin.__protocol__, Protocol):       # type: ignore
     batch_accumulate: int
     """ Number of batches to accumulate before calling ``optimize()``. """
 
 
-class MiniBatchTrainLoopMixin(BatchTrainLoopMixin, protocol=ParentProtocol):
+class MiniBatchTrain_LoopMixin(BatchTrain_LoopMixin, protocol=ParentProtocol):
     """
     LoopMixin that trains a model on batches, but accumulates a certain number of mini-batches before optimizing.
     This is useful to emulate training on larger batches than you can fit in memory,

@@ -2,13 +2,13 @@ from typing import Protocol, Literal, Union, cast
 import logging
 
 from ..core import EngineMixin, hooks, Hook
-from .engine_train import TrainEngineMixin
+from .engine_train import Train_EngineMixin
 
-__all__ = ['TrainValidationEngineMixin']
+__all__ = ['TrainValidation_EngineMixin']
 log = logging.getLogger(__name__)
 
 
-class ParentProtocol(TrainEngineMixin.__protocol__, Protocol):      # type: ignore
+class ParentProtocol(Train_EngineMixin.__protocol__, Protocol):      # type: ignore
     validation_rate: Union[list[Union[int, slice]], int, slice, None] = slice(None, None, 1)
     """
     When to run the validation.
@@ -25,7 +25,7 @@ class ParentProtocol(TrainEngineMixin.__protocol__, Protocol):      # type: igno
     """ Validation Engine that will be used. """
 
 
-class TrainValidationEngineMixin(TrainEngineMixin, protocol=ParentProtocol):
+class TrainValidation_EngineMixin(Train_EngineMixin, protocol=ParentProtocol):
     """
     EngineMixin that keeps running through a dataset forever and occasionally will run the `mixin_engine_validation`.
     This is only really useful as a training engine.
