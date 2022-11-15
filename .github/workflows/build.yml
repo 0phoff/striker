@@ -90,13 +90,12 @@ jobs:
           path: dist
 
       - name: Upload PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TEST_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-          skip_existing: true
-          verbose: true
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TEST_API_TOKEN }}
+        run: |
+          poetry config.repositories.testpypi https://test.pypi.org
+          poetry config pypi-token.testpypi $PYPI_TOKEN
+          poetry publish -r testpypi
 
 
   ######################################
@@ -117,11 +116,11 @@ jobs:
           path: dist
 
       - name: Upload PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          verbose: true
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish
 
 
   ######################################
