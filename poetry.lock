@@ -323,7 +323,7 @@ testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "requests", "xm
 
 [[package]]
 name = "rich"
-version = "12.5.1"
+version = "12.6.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 category = "main"
 optional = true
@@ -431,7 +431,7 @@ rich = ["rich", "rich-argparse"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "aa174b3fe3908dfbb295a00d81f5888ee33b717dab3e82a7fc80e9eb8e4c5b2d"
+content-hash = "a734bcfdd2c27fb0bfa378038fc72e5b5edefcf22e4d5c523a1f2faa85df563d"
 
 [metadata.files]
 astor = [
@@ -571,8 +571,8 @@ pytest = [
     {file = "pytest-5.4.3.tar.gz", hash = "sha256:7979331bfcba207414f5e1263b5a0f8f521d0f457318836a7355531ed1a4c7d8"},
 ]
 rich = [
-    {file = "rich-12.5.1-py3-none-any.whl", hash = "sha256:2eb4e6894cde1e017976d2975ac210ef515d7548bc595ba20e195fb9628acdeb"},
-    {file = "rich-12.5.1.tar.gz", hash = "sha256:63a5c5ce3673d3d5fbbf23cd87e11ab84b6b451436f1b7f19ec54b6bc36ed7ca"},
+    {file = "rich-12.6.0-py3-none-any.whl", hash = "sha256:a4eb26484f2c82589bd9a17c73d32a010b1e29d89f1604cd9bf3a2097b81bb5e"},
+    {file = "rich-12.6.0.tar.gz", hash = "sha256:ba3a3775974105c221d31141f2c116f4fd65c5ceb0698657a11e9f295ec93fd0"},
 ]
 rich-argparse = [
     {file = "rich_argparse-0.2.1-py3-none-any.whl", hash = "sha256:ab34f53f8777aba2426d3a7c5af415f16cf56685af38c8c35e5f17c814faa38e"},
