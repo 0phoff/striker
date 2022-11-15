@@ -20,12 +20,25 @@ T = TypeVar('T')
 
 
 class ParentProtocol(Protocol):
+    @hooks.engine_init
+    def engine_init(self) -> None:
+        """
+        TODO
+        """
+        ...
+
     @hooks.engine_begin
     def engine_begin(self, entry: Literal['train', 'test', 'validation']) -> None:
+        """
+        TODO
+        """
         ...
 
     @hooks.engine_end
     def engine_end(self, entry: Literal['train', 'test', 'validation']) -> None:
+        """
+        TODO
+        """
         ...
 
 
@@ -67,6 +80,7 @@ class Engine(
                 log.warning('%s attribute already exists on engine.', key)
 
         self.__init_done = True
+        self.run_hook(type='engine_init')
 
     def train(self) -> None:
         self.__check()

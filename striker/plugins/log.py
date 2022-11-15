@@ -43,12 +43,13 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         self.rich_enable = rich_enable
         self.rich_level = rich_level
 
-    @hooks.engine_begin
-    def setup_logging(self) -> None:
-        self.setup_streamhandler()
+    @hooks.engine_init
+    def setup_handlers(self):
+        # We can only setup the filehandler after the Engine is created, as we need Engine.log_file
         self.setup_filehandler()
+        self.setup_streamhandler()
 
-        # Optimization: We can safely disable this plugin, as there ar no further hooks to run.
+        # Optimization: We can safely disable this plugin, as there are no further hooks to run.
         self.enabled = False
 
     def setup_streamhandler(self) -> None:
