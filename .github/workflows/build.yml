@@ -124,7 +124,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # We are not testing on windows & MAC, because the torch url is not setup correctly
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
         python: ["3.9", "3.10", "3.11"]
 
     steps:
