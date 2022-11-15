@@ -47,7 +47,13 @@ enable = true
 vcs = "git"
 dirty = true
 style = "pep440"
-format = "{base}.post{distance}"
+format-jinja = """
+    {%- if distance == 0 -%}
+        {{ base }}
+    {%- else -%}
+        {{ base }}.post{{ distance }}
+    {%- endif -%}
+"""
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
