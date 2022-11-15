@@ -6,13 +6,13 @@ from ..core import LoopMixin, hooks
 __all__ = ['Test_LoopMixin']
 
 
-def dynamic_parent_protocol(name: str, infer: str, post: str) -> Protocol:
+def dynamic_parent_protocol(name: str, infer: str, post: str) -> Any:
     class ParentProtocol(Protocol):
         @hooks.data_batch
         def data_batch(self, data: Any) -> None:
             pass
 
-    def _infer(self, data: Any) -> Any:
+    def _infer(self: Any, data: Any) -> Any:
         """
         Inference pass of the network.
 
@@ -24,7 +24,7 @@ def dynamic_parent_protocol(name: str, infer: str, post: str) -> Protocol:
         """
         pass
 
-    def _post(self, output: list[Any]) -> Any:
+    def _post(self: Any, output: list[Any]) -> Any:
         """
         Post-processing of the network output.
 
@@ -35,12 +35,12 @@ def dynamic_parent_protocol(name: str, infer: str, post: str) -> Protocol:
             Post-processed output such as metrics, losses, etc.
         """
 
-    def epoch_begin(self) -> None:
+    def epoch_begin(self: Any) -> None:
         """
         Hook that gets called at the start of an epoch.
         """
 
-    def epoch_end(self, output: Any) -> None:
+    def epoch_end(self: Any, output: Any) -> None:
         """
         Hook that gets called at the end of an epoch.
 
@@ -48,7 +48,7 @@ def dynamic_parent_protocol(name: str, infer: str, post: str) -> Protocol:
             output: Final output from the post-processing method.
         """
 
-    def batch_begin(self, batch: int) -> None:
+    def batch_begin(self: Any, batch: int) -> None:
         """
         Hook that gets called at the start of every batch.
 
@@ -56,7 +56,7 @@ def dynamic_parent_protocol(name: str, infer: str, post: str) -> Protocol:
             batch: Number of the batch we start.
         """
 
-    def batch_end(self, batch: int, output: Any) -> None:
+    def batch_end(self: Any, batch: int, output: Any) -> None:
         """
         Hook that gets called at the end of every batch.
 

@@ -42,7 +42,7 @@ class Property_DataMixin(DataMixin, protocol=ParentProtocol):
     def __init__(self, cache_dataloaders: bool = False):
         self.cache_dataloaders = cache_dataloaders
         if self.cache_dataloaders:
-            self.cache: dict[str, DataLoader] = {}
+            self.cache: dict[str, DataLoader[Any]] = {}
 
     def get_dataloader(self, type: Literal['train', 'validation', 'test']) -> DataLoader[Any]:
         if self.cache_dataloaders and type in self.cache:
@@ -58,6 +58,6 @@ class Property_DataMixin(DataMixin, protocol=ParentProtocol):
 
         return dataloader
 
-    def reset_cache(self):
+    def reset_cache(self) -> None:
         if self.cache_dataloaders:
             self.cache = {}

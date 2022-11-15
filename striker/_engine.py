@@ -85,7 +85,7 @@ class Engine(
 
         self.run_hook(type='engine_begin', args=[self.__entry__])
         try:
-            self.mixin_data.test = dataset
+            self.mixin_data.test = dataset      # type: ignore[assignment]
             self.mixin_engine_test()
         finally:
             self.run_hook(type='engine_end', args=[self.__entry__])

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 if TYPE_CHECKING:
     from torch.utils.data import DataLoader
     from ..._engine import Engine
@@ -37,7 +37,7 @@ class DataMixin(Mixin, ABC):
 
     @property
     def train(self) -> DataLoader[Any]:
-        type = getattr(self, 'train_type', 'train')
+        type = cast(Literal['train', 'validation', 'test'], getattr(self, 'train_type', 'train'))
         return self.get_dataloader(type)
 
     @train.setter
@@ -46,7 +46,7 @@ class DataMixin(Mixin, ABC):
 
     @property
     def validation(self) -> DataLoader[Any]:
-        type = getattr(self, 'validation_type', 'validation')
+        type = cast(Literal['train', 'validation', 'test'], getattr(self, 'validation_type', 'validation'))
         return self.get_dataloader(type)
 
     @validation.setter
@@ -55,7 +55,7 @@ class DataMixin(Mixin, ABC):
 
     @property
     def test(self) -> DataLoader[Any]:
-        type = getattr(self, 'test_type', 'test')
+        type = cast(Literal['train', 'validation', 'test'], getattr(self, 'test_type', 'test'))
         return self.get_dataloader(type)
 
     @test.setter
