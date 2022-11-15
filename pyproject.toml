@@ -47,7 +47,7 @@ enable = true
 vcs = "git"
 dirty = true
 style = "pep440"
-format = "{base}.dev{distance}"
+format = "{base}.post{distance}"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
