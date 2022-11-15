@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "striker"
-version = "0.1.0"
+version = "0.0.0.post48.dev0+7be75c1"
 description = "Minimal and Modular PyTorch Framework"
 authors = ["0phoff <0phoff@users.noreply.github.com>"]
 
@@ -41,6 +41,12 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 show_error_codes = true
 
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+dirty = true
+style = "pep440"
+
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
