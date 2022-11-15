@@ -1,7 +1,6 @@
-from typing import Protocol, Optional, Any
+from typing import Protocol, Any
 
-from torch.utils.data import DataLoader
-from ..core import LoopMixin, EngineMixin, hooks
+from ..core import LoopMixin, EngineMixin
 
 __all__ = ['Test_EngineMixin']
 
@@ -10,26 +9,10 @@ class ParentProtocolTest(Protocol):
     mixin_loop_test: LoopMixin
     """ Mixin that handles how we loop through the dataset. """
 
-    test_loader: Optional[DataLoader[Any]] = None
-    """
-    Dataloader instance that is looped through.
-
-    Note:
-        This can be a property if you need to change the dataloader during a run.
-    """
-
 
 class ParentProtocolValidation(Protocol):
     mixin_loop_validation: LoopMixin
     """ Mixin that handles how we loop through the dataset. """
-
-    validation_loader: Optional[DataLoader[Any]] = None
-    """
-    Dataloader instance that is looped through.
-
-    Note:
-        This can be a property if you need to change the dataloader during a run.
-    """
 
 
 class Test_EngineMixin(EngineMixin):
@@ -42,19 +25,22 @@ class Test_EngineMixin(EngineMixin):
             self.__protocol__ = ParentProtocolValidation
         elif self.name == 'test':
             self.__protocol__ = ParentProtocolTest
-
-    @hooks.engine_begin
-    def assert_name(self) -> None:
-        assert self.name in ('test', 'validation'), f'{self.__class__.__name__} can only be used for validating or testing'
+        else:
+            raise ValueError(f'{self.__class__.__name__} can only be used for validation or testing')
 
     def __call__(self) -> None:
         if self.quit:
             return
 
-        dataloader = getattr(self.parent, f'{self.name}_loader')
-        mixin = getattr(self.parent, f'mixin_loop_{self.name}')
-
-        mixin.dataloader = dataloader
+        if self.name == 'validation':
+            mixin = self.parent.mixin_loop_validation
+            mixin.dataloader = self.parent.mixin_data.validation
+        elif self.name == 'test':
+            mixin = self.parent.mixin_loop_test
+            mixin.dataloader = self.parent.mixin_data.test
+        else:
+            # Should never be reached as it is already tested in __set_name__.
+            raise ValueError(f'{self.__class__.__name__} can only be used for validation or testing')
 
         with self.parent.eval():
             for _ in mixin:

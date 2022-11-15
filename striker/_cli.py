@@ -131,21 +131,6 @@ class CLI(argparse.ArgumentParser):
         )
         self.__parsers['train'].set_defaults(subcommand='train')
 
-        self.__parsers['validation'] = subparsers.add_parser(
-            'validation',
-            parents=[parent],
-            formatter_class=self.formatter_class,
-            description='Test a model with validation data',
-            help='test a model with validation data',
-        )
-        self.__parsers['validation'].set_defaults(subcommand='validation')
-        self.__parsers['validation'].add_argument(
-            '-w', '--weights',
-            type=Path,
-            default=None,
-            help='Path to stored weights',
-        )
-
         self.__parsers['test'] = subparsers.add_parser(
             'test',
             parents=[parent],
@@ -155,10 +140,16 @@ class CLI(argparse.ArgumentParser):
         )
         self.__parsers['test'].set_defaults(subcommand='test')
         self.__parsers['test'].add_argument(
-            '-w', '--weights',
+            '--weights',
             type=Path,
             default=None,
             help='Path to stored weights',
+        )
+        self.__parsers['test'].add_argument(
+            '--dataset',
+            choices=('train', 'validation', 'test'),
+            default='test',
+            help='Dataset to use for testing',
         )
 
         self.__parsers['protocol'] = subparsers.add_parser(
@@ -218,8 +209,6 @@ class CLI(argparse.ArgumentParser):
         parsed_args = self.parse_args(args, namespace)
         if parsed_args.subcommand == 'train':
             self.__train(parsed_args, func, variable)
-        elif parsed_args.subcommand == 'validation':
-            self.__validation(parsed_args, func, variable)
         elif parsed_args.subcommand == 'test':
             self.__test(parsed_args, func, variable)
         elif parsed_args.subcommand == 'protocol':
@@ -243,18 +232,6 @@ class CLI(argparse.ArgumentParser):
 
         self.__engine = func(params, args)
         self.__engine.train()
-
-    def __validation(
-        self,
-        args: argparse.Namespace,
-        func: Callable[[Parameters, argparse.Namespace], Engine],
-        variable: str,
-    ) -> None:
-        params = self.__get_parameters(args, variable)
-        self.__load_weights(params, args.weights)
-
-        self.__engine = func(params, args)
-        self.__engine.validation()
 
     def __test(
         self,

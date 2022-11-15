@@ -9,7 +9,8 @@ from types import FrameType
 
 from ._parameter import Parameters
 from .core import HookParent, PluginParent, MixinParent, hooks
-from .core import EngineMixin, LoopMixin
+from .core import EngineMixin, LoopMixin, DataMixin
+from .mixins.data_property import Property_DataMixin
 from .mixins.engine_train import Train_EngineMixin
 from .mixins.loop_batchtrain import BatchTrain_LoopMixin
 
@@ -36,13 +37,13 @@ class Engine(
     TODO
     """
     __type_check__: Literal['none', 'log', 'raise'] = 'raise'
-    __entry__: Optional[Literal['train', 'test', 'validation']] = None
+    __entry__: Optional[Literal['train', 'test']] = None
     __init_done: bool = False
 
     # Mixins
+    mixin_data: DataMixin = Property_DataMixin()
     mixin_engine_train: EngineMixin = Train_EngineMixin()
     mixin_loop_train: LoopMixin = BatchTrain_LoopMixin()
-    mixin_engine_validation: Optional[EngineMixin] = None
     mixin_engine_test: Optional[EngineMixin] = None
 
     def __init__(self, params: Parameters, **kwargs: Any):
@@ -77,24 +78,14 @@ class Engine(
         finally:
             self.run_hook(type='engine_end', args=[self.__entry__])
 
-    def validation(self) -> None:
-        self.__check()
-        assert self.mixin_engine_validation is not None, 'EngineMixin required for validation'
-        self.__entry__ = 'validation'
-
-        self.run_hook(type='engine_begin', args=[self.__entry__])
-        try:
-            self.mixin_engine_validation()
-        finally:
-            self.run_hook(type='engine_end', args=[self.__entry__])
-
-    def test(self) -> None:
+    def test(self, dataset: Literal['train', 'validation', 'test'] = 'test') -> None:
         self.__check()
         assert self.mixin_engine_test is not None, 'EngineMixin required for test'
         self.__entry__ = 'test'
 
         self.run_hook(type='engine_begin', args=[self.__entry__])
         try:
+            self.mixin_data.test = dataset
             self.mixin_engine_test()
         finally:
             self.run_hook(type='engine_end', args=[self.__entry__])
