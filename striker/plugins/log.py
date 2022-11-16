@@ -44,7 +44,7 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         self.rich_level = rich_level
 
     @hooks.engine_init
-    def setup_handlers(self):
+    def setup_handlers(self) -> None:
         # We can only setup the filehandler after the Engine is created, as we need Engine.log_file
         self.setup_filehandler()
         self.setup_streamhandler()
