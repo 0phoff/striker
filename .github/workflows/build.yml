@@ -71,11 +71,11 @@ jobs:
 
       - name: Upload PyPI
         env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TEST_API_TOKEN }}
+          TEST_PYPI_TOKEN: ${{ secrets.PYPI_TEST_API_TOKEN }}
         run: |
-          poetry config repositories.testpypi https://test.pypi.org/legacy
-          poetry config pypi-token.testpypi $PYPI_TOKEN
-          poetry publish -r testpypi --skip-existing
+          poetry config repositories.test https://test.pypi.org/legacy
+          poetry config pypi-token.test $TEST_PYPI_TOKEN
+          poetry publish -r test
 
 
   ######################################
