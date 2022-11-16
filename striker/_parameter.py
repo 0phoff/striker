@@ -5,6 +5,8 @@ import copy
 from contextlib import contextmanager
 from collections.abc import Sequence, Mapping
 import importlib
+import importlib.abc
+import importlib.util
 import inspect
 import logging
 from pathlib import Path
