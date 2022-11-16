@@ -65,7 +65,7 @@ jobs:
           poetry install --all-extras
 
       - name: Build wheel
-        run: poetry build
+        run: TESTPYPI=1 poetry build
 
       - name: Upload PyPI
         env:

@@ -47,11 +47,12 @@ show_error_codes = true
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
-dirty = true
 style = "pep440"
 format-jinja = """
     {%- if distance == 0 -%}
         {{ base }}
+    {%- elif env['TESTPYPI'] == '1' -%}
+        {{ base }}.post{{ distance }}
     {%- else -%}
         {{ base }}+{{ distance }}.{{ commit }}
     {%- endif -%}
