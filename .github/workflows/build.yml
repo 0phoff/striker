@@ -43,6 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint]
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/master')
+    env:
+      TESTPYPI: 1
 
     steps:
       - name: Checkout repository
@@ -65,7 +67,7 @@ jobs:
           poetry install --all-extras
 
       - name: Build wheel
-        run: TESTPYPI=1 poetry build
+        run: poetry build
 
       - name: Upload PyPI
         env:
