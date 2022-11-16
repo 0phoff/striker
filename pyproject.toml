@@ -4,6 +4,8 @@ version = "0.0.0"
 description = "Minimal and Modular PyTorch Framework"
 authors = ["0phoff <0phoff@users.noreply.github.com>"]
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/0phoff/striker"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -51,7 +53,7 @@ format-jinja = """
     {%- if distance == 0 -%}
         {{ base }}
     {%- else -%}
-        {{ base }}.post{{ distance }}
+        {{ base }}+{{ distance }}.{{ commit }}
     {%- endif -%}
 """
 
