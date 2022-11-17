@@ -243,7 +243,7 @@ class CLI(argparse.ArgumentParser):
         self.__load_weights(params, args.weights)
 
         self.__engine = func(params, args)
-        self.__engine.test()
+        self.__engine.test(args.dataset)
 
     def __protocol(
         self,
