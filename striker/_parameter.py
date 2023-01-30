@@ -455,7 +455,19 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
 
         raise ValueError(f'Could not cast "{param}" to "{cast_type}"')
 
-    # Sequence: split on "," and cast trimmed substrings to basetype
+    # Tuple:
+    #  - Multiple values (tuple[int, str, float]): cast to matching subtype
+    #  - Ellipsis (tuple[int, ...]): cast to first subtype -> Handled by "Sequence" code below
+    if inspect.isclass(origin) and issubclass(origin, tuple):
+        subtypes = getattr(cast_type, '__args__', [])
+        if len(subtypes) and subtypes[-1] != ...:
+            params = param.split(',')
+            if len(subtypes) != len(params):
+                log.error(f'Parameter does not contain the right amount of values for tuple type "{cast_type}". Returning string')
+                return param
+            return origin(cast_arg(p.strip(), subtype) for p, subtype in zip(params, subtypes))
+
+    # Sequence: split on "," and cast trimmed substrings to subtype
     if inspect.isclass(origin) and issubclass(origin, Sequence):
         subtypes = getattr(cast_type, '__args__', [])
         if len(subtypes):
