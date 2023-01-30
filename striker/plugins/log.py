@@ -21,7 +21,6 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
     This plugin enables the :class:`~rich.logging.RichHandler` if it is installed and can also setup a logging file to store your run logs.
 
     Args:
-        logger_name: Name of the logger for which we want to store the logs in a file. Default **root logger / all loggers**
         file_mode: How to open the log file. Default **'a'**
         file_level: Filter level for the logging file; Default **0**
         rich_enable: Wether to enabled the :class:`~rich.logging.RichHandler` if it is available; Default **true**
@@ -31,13 +30,11 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
 
     def __init__(
         self,
-        logger_name: str = '',
         file_mode: Literal['a', 'w'] = 'a',
         file_level: int = logging.NOTSET,
         rich_enable: bool = True,
         rich_level: int = logging.INFO,
     ):
-        self.logger = logging.getLogger(logger_name)
         self.file_mode = file_mode
         self.file_level = file_level
         self.rich_enable = rich_enable
@@ -46,16 +43,23 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
     @hooks.engine_init
     def setup_handlers(self) -> None:
         # We can only setup the filehandler after the Engine is created, as we need Engine.log_file
-        self.setup_filehandler()
-        self.setup_streamhandler()
+        handlers = (self.setup_filehandler(), self.setup_streamhandler())
+        handlers = tuple(h for h in handlers if h is not None)
+        if len(handlers):
+            logging.basicConfig(
+                force=True,
+                level=logging.NOTSET,
+                handlers=handlers,
+            )
 
         # Optimization: We can safely disable this plugin, as there are no further hooks to run.
         self.enabled = False
 
-    def setup_streamhandler(self) -> None:
+    def setup_streamhandler(self) -> Optional[logging.Handler]:
         if not self.rich_enable:
-            return
+            return None
 
+        # Create Handler
         handler: Optional[logging.Handler] = None
         if sys.stdout.isatty():
             with suppress(ImportError):
@@ -66,28 +70,30 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
             handler = logging.StreamHandler()
             handler.setFormatter(logging.Formatter('%(levelname)-8s %(message)s', '[%X]'))
 
+        # Set Level
         handler.setLevel(self.rich_level)
-        logging.basicConfig(
-            force=True,
-            level=logging.NOTSET,
-            handlers=[handler],
-        )
+        
+        return handler
 
-    def setup_filehandler(self) -> None:
+    def setup_filehandler(self) -> Optional[logging.Handler]:
         log_file = getattr(self.parent, 'log_file', None)
         if log_file is None:
             log.warning('"log_file" is None, so logging data will not be saved.')
-            return
+            return None
 
         self.log_file = Path(log_file)
         if not self.log_file.parent.exists():
             log.info('log_file folder "%s" does not exist, creating now...', self.log_file.parent)
             self.log_file.parent.mkdir(parents=True)
 
+        # Create Handler
         handler = logging.FileHandler(filename=self.log_file, mode=self.file_mode)
-        handler.setLevel(self.file_level)
         handler.setFormatter(logging.Formatter(
             fmt='%(levelname)s %(asctime)s [%(filename)s:%(lineno)d] | %(message)s',
             datefmt='%x %X',
         ))
-        self.logger.addHandler(handler)
+        
+        # Set Level
+        handler.setLevel(self.file_level)
+        
+        return handler
