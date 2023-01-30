@@ -369,11 +369,11 @@ class Parameters:
 
     @classmethod
     def _load_external(cls, filename: Path, variable: str) -> Union[Parameters, Callable[..., Parameters]]:
-        tried = [str(filename)]
+        tried = [str(filename.resolve())]
         if not (filename.is_file() or filename.is_absolute()):
             for stackframe in inspect.stack()[2:]:
                 stackfile = Path(stackframe.filename).parent.joinpath(filename)
-                tried.append(str(filename))
+                tried.append(str(stackfile.resolve()))
                 if stackfile.is_file():
                     filename = stackfile
                     break
