@@ -117,8 +117,7 @@ class CLI(argparse.ArgumentParser):
         parent.add_argument(
             '-p', '--param',
             action='append',
-            nargs=2,
-            metavar=('KEY', 'VALUE'),
+            metavar='KEY=VALUE',
             help='keyword arguments for parameter file (multiple are allowed)',
         )
 
@@ -343,7 +342,14 @@ class CLI(argparse.ArgumentParser):
 
     @staticmethod
     def __get_parameters(args: argparse.Namespace, variable: str) -> Parameters:
-        param_kwargs = {n: v for n, v in args.param} if args.param is not None else {}
+        param_kwargs: dict[str, str] = {}
+        if args.params is not None:
+            try:
+                params = (p.split('=', 1) for p in args.param)
+                param_kwargs = dict((p[0].strip(), p[1].strip()) for p in params)
+            except BaseException as err:
+                raise ValueError(f'Could not parse parameters: {args.param}') from err
+
         with Parameters.enable_cast():
             return Parameters.from_file(args.config, variable, **param_kwargs)
 
