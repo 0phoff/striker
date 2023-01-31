@@ -343,7 +343,7 @@ class CLI(argparse.ArgumentParser):
     @staticmethod
     def __get_parameters(args: argparse.Namespace, variable: str) -> Parameters:
         param_kwargs: dict[str, str] = {}
-        if args.params is not None:
+        if args.param is not None:
             try:
                 params = (p.split('=', 1) for p in args.param)
                 param_kwargs = dict((p[0].strip(), p[1].strip()) for p in params)
