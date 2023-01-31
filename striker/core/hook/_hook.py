@@ -20,6 +20,7 @@ class HookDecorator:
         self.type = type
         self.parent = parent
         self.indices: tuple[slice, ...] = (slice(None, None, 1),)
+        self.timing = 0
 
     def __getitem__(self, indices: Union[int, slice, tuple[Union[int, slice], ...]]) -> HookDecorator:
         if isinstance(indices, (int, slice)):
@@ -34,7 +35,15 @@ class HookDecorator:
 
     def __call__(self, fn: Callable[..., None]) -> Hook:
         assert callable(fn), 'hooks should be used as decorators on HookParent methods'
-        return Hook(self.type, self.indices, fn, self.parent)
+        return Hook(self.type, self.indices, fn, self.parent, self.timing)
+
+    def set_early(self) -> HookDecorator:
+        self.timing = -1
+        return self
+
+    def set_late(self) -> HookDecorator:
+        self.timing = 1
+        return self
 
 
 class Hook:
@@ -49,10 +58,12 @@ class Hook:
         indices: tuple[slice, ...],
         fn: HookFunction,
         parent: Optional[HookParent] = None,
+        timing: int = 0,
         enabled: bool = True,
     ) -> None:
         self.type = type
         self.indices = indices
+        self.timing = timing
         self.enabled = enabled
 
         if parent is None:
@@ -104,6 +115,7 @@ class Hook:
             self.indices,
             self.fn,
             parent,
+            self.timing,
             self.enabled,
         )
 
@@ -129,3 +141,17 @@ class Hook:
             )
 
         return True
+
+    def set_early(self) -> None:
+        self.timing = -1
+
+    def set_late(self) -> None:
+        self.timing = 1
+
+    @property
+    def early(self) -> bool:
+        return self.timing == -1
+
+    @property
+    def late(self) -> bool:
+        return self.timing == 1

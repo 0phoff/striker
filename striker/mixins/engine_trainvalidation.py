@@ -49,9 +49,9 @@ class TrainValidation_EngineMixin(Train_EngineMixin, protocol=ParentProtocol):
             validation_rate = getattr(self.parent, 'validation_rate', slice(None, None, 1))
             if validation_rate is not None:
                 if self.validation_mode == 'batch':
-                    self.hooks.train_batch_end[validation_rate](self.run_validation)
+                    self.hooks.train_batch_end[validation_rate](self.run_validation).set_early()
                 else:
-                    self.hooks.train_epoch_end[validation_rate](self.run_validation)
+                    self.hooks.train_epoch_end[validation_rate](self.run_validation).set_early()
 
     def run_validation(self) -> None:
         mixin = cast(EngineMixin, self.parent.mixin_engine_validation)

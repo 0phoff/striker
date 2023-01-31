@@ -113,9 +113,16 @@ class Engine(
         kwargs: dict[str, Any] = {},    # NOQA: B006 - Read only argument
     ) -> None:
         """ This method runs all hooks in mixins, plugins and on the engine itself. """
-        self.hooks.run(type=type, index=index, args=args, kwargs=kwargs)
-        self.plugins.run(type=type, index=index, args=args, kwargs=kwargs)
-        self.mixins.run(type=type, index=index, args=args, kwargs=kwargs)
+        # Get run functions
+        run_hooks = self.hooks.run(type=type, index=index, args=args, kwargs=kwargs)
+        run_plugins = self.plugins.run(type=type, index=index, args=args, kwargs=kwargs)
+        run_mixins = self.mixins.run(type=type, index=index, args=args, kwargs=kwargs)
+
+        # Run 3 times (early, normal, late)
+        for _ in range(3):
+            run_hooks()
+            run_plugins()
+            run_mixins()
 
     def quit(self) -> None:
         if not self.__quit__:

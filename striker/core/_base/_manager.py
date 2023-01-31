@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Generic, Iterable, Sequence, Optional, Any, TypeVar, cast
+from typing import Generic, Iterable, Sequence, Optional, Any, TypeVar, cast, Callable
 
 from .._protocol import ProtocolChecker
 from ._base import Base
@@ -22,10 +22,19 @@ class BaseManager(Generic[T]):
         index: Optional[int] = None,
         args: Sequence[Any] = [],       # NOQA: B006 - Read only argument
         kwargs: dict[str, Any] = {},    # NOQA: B006 - Read only argument
-    ) -> None:
+    ) -> Callable[[], None]:
+        # Split hooks
+        run_hooks_children: list[Callable[[], None]] = []
         for child in self._children.values():
             if child.enabled:
-                child.hooks.run(type=type, index=index, args=args, kwargs=kwargs)
+                run_hooks_children.append(child.hooks.run(type=type, index=index, args=args, kwargs=kwargs))
+
+        # Run hook function
+        def run_hooks() -> None:
+            for run_hook in run_hooks_children:
+                run_hook()
+
+        return run_hooks
 
     def check(self, protocol: Optional[ProtocolChecker] = None) -> None:
         for child in self._children.values():

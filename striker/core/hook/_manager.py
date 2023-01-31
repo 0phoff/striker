@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Iterable, Any
+from typing import TYPE_CHECKING, Optional, Iterable, Any, Callable
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from ._parent import HookParent
@@ -49,7 +49,7 @@ class HookManager:
         index: Optional[int] = None,
         args: Sequence[Any] = [],       # NOQA: B006 - Read only argument
         kwargs: dict[str, Any] = {},    # NOQA: B006 - Read only argument
-    ) -> None:
+    ) -> Callable[[], None]:
         # Get hooks
         hooks: Iterable[Hook]
         if type is None:
@@ -57,10 +57,29 @@ class HookManager:
         else:
             hooks = self.__hooks[type]
 
-        # Call hooks
+        # Split hooks
+        split_hooks: tuple[list[Hook], list[Hook], list[Hook]] = ([], [], [])
         for hook in hooks:
             if hook.is_active(index=index):
+                if hook.early:
+                    split_hooks[0].append(hook)
+                elif hook.late:
+                    split_hooks[2].append(hook)
+                else:
+                    split_hooks[1].append(hook)
+
+        # Run hook function
+        called = 0
+
+        def run_hooks() -> None:
+            nonlocal called
+
+            for hook in split_hooks[called]:
                 hook(*args, **kwargs)
+
+            called += 1
+
+        return run_hooks
 
     def register(self, hook: Hook) -> None:
         self.__hooks[hook.type].add(hook)
