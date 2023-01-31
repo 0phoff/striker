@@ -1,4 +1,4 @@
-from typing import Literal, Protocol, Union, Optional
+from typing import Literal, Protocol, Union, Optional, Any
 
 import logging
 from pathlib import Path
@@ -56,13 +56,22 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
         self.extension = extension
         self.final = final
 
-    def save(self, name: str) -> None:
+    def save(self, name: str, *args: Any, **kwargs: Any) -> None:
         backup_path = self.backup_folder / f'{name}'
         if not ''.join(backup_path.suffixes).endswith(self.extension):
             backup_path = backup_path.with_suffix(self.extension)
 
-        self.parent.params.save(backup_path)
+        self.parent.params.save(backup_path, *args, **kwargs)
         log.info('Saved backup: %s', backup_path)
+
+    def load(self, name: str, *args: Any, **kwargs: Any) -> None:
+        backup_path = self.backup_folder / f'{name}'
+        if not ''.join(backup_path.suffixes).endswith(self.extension):
+            backup_path = backup_path.with_suffix(self.extension)
+
+        if backup_path.exists():
+            self.parent.params.load(backup_path, *args, **kwargs)
+            log.info('Loaded backup: %s', backup_path)
 
     @hooks.engine_begin
     def setup_backup_hook(self, entry: Literal['train', 'validation', 'test']) -> None:

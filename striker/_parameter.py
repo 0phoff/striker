@@ -51,7 +51,7 @@ class Parameters:
 
         self.__init_done = True
 
-    def save(self, filename: Union[Path, str]) -> None:
+    def save(self, filename: Union[Path, str], *keys: str) -> None:
         """
         Serialize all the hyperparameters to a pickle file.
 
@@ -59,25 +59,37 @@ class Parameters:
 
         Args:
             filename (str or path): File to store the hyperparameters
+            *keys (str): Which items to store (Default: store all keys that are not in ``self.__no_serialize``)
 
         Note:
             This function will first check if the existing attributes have a `state_dict()` function,
             in which case it will use this function to get the values needed to save.
+
+        Warning:
+            If you pass keys to save, this function will not check whether these keys are in the ``self.__no_serialize`` list.
         """
         state = {}
 
-        for k, v in vars(self).items():
-            if k not in self.__no_serialize:
-                if hasattr(v, 'state_dict'):
-                    state[k] = v.state_dict()
-                else:
-                    state[k] = v
+        if not len(keys):
+            keys = tuple(k for k in vars(self).keys() if k not in self.__no_serialize)
+
+        for k in keys:
+            v = vars(self)[k]
+            if hasattr(v, 'state_dict'):
+                state[k] = v.state_dict()
+            else:
+                state[k] = v
 
         torch.save(state, filename)
 
-    def load(self, filename: Union[Path, str], strict: Optional[bool] = True) -> None:
+    def load(self, filename: Union[Path, str], *keys: str, strict: Optional[bool] = True) -> None:
         """
         Load the hyperparameters from a serialized pickle file.
+
+        Args:
+            filename (str or path): File to load the hyperparameters from
+            *keys (str): Which items to load (Default: load all keys present in the state file)
+            strict (bool): Whether to perform strict loading of the state_dicts
 
         Note:
             This function will first check if the existing attributes have a `load_state_dict()` function,
@@ -93,8 +105,16 @@ class Parameters:
         """
         state = torch.load(filename, 'cpu')
 
-        for k, v in state.items():
+        if not len(keys):
+            keys = state.keys()
+
+        for k in keys:
+            if k not in state:
+                log.error(f'Key "{k}" is not present in loaded state from "{filename}"')
+
+            v = state[k]
             current = getattr(self, k, None)
+
             if hasattr(current, 'load_state_dict'):
                 try:
                     current.load_state_dict(v, strict=strict)   # type: ignore[union-attr]
