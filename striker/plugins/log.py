@@ -44,12 +44,12 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
     def setup_handlers(self) -> None:
         # We can only setup the filehandler after the Engine is created, as we need Engine.log_file
         handlers = (self.setup_filehandler(), self.setup_streamhandler())
-        handlers = tuple(h for h in handlers if h is not None)
-        if len(handlers):
+        filtered_handlers = tuple(h for h in handlers if h is not None)
+        if len(filtered_handlers):
             logging.basicConfig(
                 force=True,
                 level=logging.NOTSET,
-                handlers=handlers,
+                handlers=filtered_handlers,
             )
 
         # Optimization: We can safely disable this plugin, as there are no further hooks to run.
@@ -72,7 +72,7 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
 
         # Set Level
         handler.setLevel(self.rich_level)
-        
+
         return handler
 
     def setup_filehandler(self) -> Optional[logging.Handler]:
@@ -92,8 +92,8 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
             fmt='%(levelname)s %(asctime)s [%(filename)s:%(lineno)d] | %(message)s',
             datefmt='%x %X',
         ))
-        
+
         # Set Level
         handler.setLevel(self.file_level)
-        
+
         return handler
