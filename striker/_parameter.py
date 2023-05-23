@@ -493,9 +493,7 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
         subtypes = getattr(cast_type, '__args__', [])
         if len(subtypes) and subtypes[-1] != ...:
             params = param.split(',')
-            if len(subtypes) != len(params):
-                log.error(f'Parameter does not contain the right amount of values for tuple type "{cast_type}". Returning string')
-                return param
+            assert len(subtypes) == len(params), f'Parameter does not contain the right amount of values for tuple type "{cast_type}".'
             return origin(cast_arg(p.strip(), subtype) for p, subtype in zip(params, subtypes))
 
     # Sequence: split on "," and cast trimmed substrings to subtype
