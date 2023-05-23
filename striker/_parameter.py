@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, Iterator, Union, Optional, Iterable, cast
+from typing import Any, Callable, Iterator, Union, Optional, Iterable, Literal, cast
 
 import copy
 from contextlib import contextmanager
@@ -460,6 +460,17 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
             raise ValueError(f'Could not convert "{param}" to slice') from err
 
     origin = getattr(cast_type, '__origin__', None)
+
+    # Literal: check if valid and return as is
+    if origin == Literal:
+        values = getattr(cast_type, '__args__', [])
+
+        if not all(isinstance(v, str) for v in values):
+            log.warning(f'Cannot check Literal type with non-string values: {values}')
+            return param
+
+        assert param in values, f'"{param}" is not one of the following literal strings: {values}'
+        return param
 
     # Union/Optional: Try casting to any of the underlying types
     if origin == Union:
