@@ -230,6 +230,7 @@ class CLI(argparse.ArgumentParser):
         params = self.__get_parameters(args, variable)
 
         self.__engine = func(params, args)
+        assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
         self.__engine.train()
 
     def __test(
@@ -242,6 +243,7 @@ class CLI(argparse.ArgumentParser):
         self.__load_weights(params, args.weights)
 
         self.__engine = func(params, args)
+        assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
         self.__engine.test(args.dataset)
 
     def __protocol(
@@ -278,6 +280,7 @@ class CLI(argparse.ArgumentParser):
             log.warning('Could not get custom Engine class from function, so we need to build the engine to get the protocol')
             params = self.__get_parameters(args, variable)
             self.__engine = func(params, args)
+            assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
             print(self.__engine.protocol)
 
     def __protocol_check(
@@ -288,6 +291,7 @@ class CLI(argparse.ArgumentParser):
     ) -> None:
         params = self.__get_parameters(args, variable)
         self.__engine = func(params, args)
+        assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
 
         try:
             from rich.table import Table
