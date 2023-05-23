@@ -1,4 +1,4 @@
-from typing import Literal, Protocol, Union, Optional
+from typing import Literal, Protocol, Union, Optional, cast
 
 from contextlib import suppress
 import logging
@@ -64,7 +64,7 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
         if sys.stdout.isatty():
             with suppress(ImportError):
                 from rich.logging import RichHandler
-                handler = RichHandler(rich_tracebacks=True, tracebacks_suppress=['striker'])
+                handler = cast(logging.Handler, RichHandler(rich_tracebacks=True, tracebacks_suppress=['striker']))
                 handler.setFormatter(logging.Formatter('%(message)s', '[%X]'))
         if handler is None:
             handler = logging.StreamHandler()

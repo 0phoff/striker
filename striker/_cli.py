@@ -350,7 +350,7 @@ class CLI(argparse.ArgumentParser):
         if args.param is not None:
             try:
                 params = (p.split('=', 1) for p in args.param)
-                param_kwargs = dict((p[0].strip(), p[1].strip()) for p in params)
+                param_kwargs = {p[0].strip(): p[1].strip() for p in params}
             except BaseException as err:
                 raise ValueError(f'Could not parse parameters: {args.param}') from err
 

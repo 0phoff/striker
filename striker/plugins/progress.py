@@ -8,7 +8,7 @@ import logging
 import sys
 from rich.text import Text
 from rich.table import Column
-from rich.progress import (     # type: ignore[attr-defined]
+from rich.progress import (
     Progress,
     ProgressColumn,
     TextColumn,
