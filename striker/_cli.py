@@ -6,6 +6,7 @@ import argparse
 import inspect
 import logging
 from pathlib import Path
+import sys
 
 from . import Engine, Parameters
 from .core import Mixin
@@ -129,6 +130,11 @@ class CLI(argparse.ArgumentParser):
             help='train a model',
         )
         self.__parsers['train'].set_defaults(subcommand='train')
+        self.__parsers['train'].add_argument(
+            '--dry-run',
+            action='store_true',
+            help='Create the engine, but do not run the training routine (useful for debugging in interactive mode)',
+        )
 
         self.__parsers['test'] = subparsers.add_parser(
             'test',
@@ -150,7 +156,11 @@ class CLI(argparse.ArgumentParser):
             default='test',
             help='Dataset to use for testing',
         )
-
+        self.__parsers['test'].add_argument(
+            '--dry-run',
+            action='store_true',
+            help='Create the engine, but do not run the testing routine (useful for debugging in interactive mode)',
+        )
         self.__parsers['protocol'] = subparsers.add_parser(
             'protocol',
             parents=[parent],
@@ -231,6 +241,13 @@ class CLI(argparse.ArgumentParser):
 
         self.__engine = func(params, args)
         assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
+
+        if args.dry_run:
+            log.info('The --dry-run flag prevented the training routine to actually run')
+            if sys.flags.interactive:
+                log.info('You can access the Parameters through the <CLI.parameters> property and the Engine as <CLI.engine>')
+            return
+
         self.__engine.train()
 
     def __test(
@@ -244,6 +261,13 @@ class CLI(argparse.ArgumentParser):
 
         self.__engine = func(params, args)
         assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
+
+        if args.dry_run:
+            log.info('The --dry-run flag prevented the testing routine to actually run')
+            if sys.flags.interactive:
+                log.info('You can access the Parameters through the <CLI.parameters> property and the Engine as <CLI.engine>')
+            return
+
         self.__engine.test(args.dataset)
 
     def __protocol(
@@ -363,4 +387,4 @@ class CLI(argparse.ArgumentParser):
             log.info('Loading weights from: %s', weights)
             params.load(weights)
         else:
-            log.error('No weights given to load from!')
+            log.error('No weight file given to load')
