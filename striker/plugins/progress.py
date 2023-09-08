@@ -73,6 +73,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
             TextColumn('{task.fields[post_text]}'),
             auto_refresh=False,
             speed_estimate_period=24 * 60 * 60,
+            transient=True,
         )
 
         if entry == 'train':
