@@ -30,14 +30,12 @@ class DevicePlugin(Plugin, protocol=ParentProtocol):
         self.parent.to(self.device)
 
     @hooks.data_batch
-    def cast(self, input_data: Any) -> None:
-        if isinstance(input_data, torch.Tensor):
-            input_data.data = input_data.data.to(self.device)
-        elif isinstance(input_data, Sequence):
-            for sub_data in input_data:
-                if isinstance(sub_data, torch.Tensor):
-                    sub_data.data = sub_data.data.to(self.device)
-        elif isinstance(input_data, Mapping):
-            for sub_data in input_data.values():
-                if isinstance(sub_data, torch.Tensor):
-                    sub_data.data = sub_data.data.to(self.device)
+    def cast(self, data: Any) -> None:
+        if isinstance(data, torch.Tensor):
+            data.data = data.data.to(self.device)
+        elif isinstance(data, Sequence):
+            for sub_data in data:
+                self.cast(sub_data)
+        elif isinstance(data, Mapping):
+            for sub_data in data.values():
+                self.cast(sub_data)
