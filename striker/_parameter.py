@@ -21,9 +21,10 @@ class Parameters:
     """
     TODO
     """
-    __cast = False
-    __init_done = False
-    __automatic = {
+    __cast: bool = False
+    __init_done: bool = False
+    __on_load: Optional[Callable[[Parameters], None]]
+    __automatic: dict[str, Any] = {
         'epoch': 0,
         'batch': 0,
     }
@@ -49,6 +50,7 @@ class Parameters:
             else:
                 log.error('%s attribute already exists as a Parameter and will not be overwritten', key)
 
+        self.__on_load = None
         self.__init_done = True
 
     def save(self, filename: Union[Path, str], *keys: str) -> None:
@@ -123,10 +125,25 @@ class Parameters:
             else:
                 setattr(self, k, v)
 
+        if self.__on_load is not None:
+            log.debug('Running load hook')
+            self.__on_load(self)
+
     def reset(self) -> None:
         """ Resets automatic variables epoch and batch """
         for key, value in self.__automatic.items():
             setattr(self, key, value)
+
+    def setup_load_hook(self, func: Callable[[Parameters], None]) -> None:
+        """
+        This method sets up a function that gets called after loading in weights.
+        You can use this function to automatically adapt certain parameters, depending on the values that were loaded.
+
+        Args:
+            func (callable): Function that gets called with the parameter object as a single argument
+        """
+        assert callable(func), 'on_load should be callable: `on_load(param: Parameters) -> None`'
+        self.__on_load = func
 
     def get(self, name: str, default: Optional[Any] = None) -> Any:
         """ Recursively drill down into objects stored on Parameters and get a value.
