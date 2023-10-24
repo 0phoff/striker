@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/0phoff/striker"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.9,<3.13"
 
 # Required dependencies
 typeguard = "^2.13"
@@ -22,8 +22,9 @@ rich-argparse = { version = "^0.2.1", optional = true }
 rich = ["rich", "rich-argparse"]
 
 [tool.poetry.group.dev.dependencies]
+numpy = "^1.26"
 pytest = "^5.2"
-mypy = "^0.971"
+mypy = "^1.6.1"
 flake8 = "^5.0"
 flake8-bugbear = "^22.8"
 flake8-comprehensions = "^3.10"
@@ -43,6 +44,7 @@ no_implicit_reexport = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 show_error_codes = true
+python_version = "3.9"
 
 [tool.poetry-dynamic-versioning]
 enable = true
