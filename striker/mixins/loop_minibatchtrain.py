@@ -52,7 +52,7 @@ class MiniBatchTrain_LoopMixin(BatchTrain_LoopMixin, protocol=ParentProtocol):
             self.parent.run_hook(type='train_batch_end', index=self.parent.batch, args=(self.parent.batch, accumulated_loss))
             accumulated_loss = 0
 
-            yield
+            yield None
 
         self.parent.epoch += 1
         self.parent.run_hook(type='train_epoch_end', index=self.parent.epoch, args=(self.parent.epoch,))

@@ -135,7 +135,7 @@ class Engine(
             PyTorch optimizers and the ReduceLROnPlateau classes do not have a `to()` function implemented.
             For these objects, this function will go through all their necessary attributes and cast the tensors to the right device.
         """
-        def manual_to(obj: dict[str, Any]) -> None:
+        def manual_to(obj: dict[Any, Any]) -> None:
             for param in obj.values():
                 if isinstance(param, torch.Tensor):
                     param.data = param.data.to(*args, **kwargs)

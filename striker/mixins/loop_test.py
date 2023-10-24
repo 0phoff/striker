@@ -104,7 +104,7 @@ class Test_LoopMixin(LoopMixin):
             self.parent.run_hook(type=f'{self.name}_batch_begin', index=batch + 1, args=(batch + 1,))
             outputs.append(infer_fn(data))
             self.parent.run_hook(type=f'{self.name}_batch_end', index=batch, args=(batch, outputs[-1]))
-            yield
+            yield None
 
         output = post_fn(outputs)
 
