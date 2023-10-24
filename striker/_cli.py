@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 
 from . import Engine, Parameters
+from ._parameter import load_external
 from .core import Mixin
 from .core._protocol import ProtocolChecker, signature_to_string
 
@@ -341,7 +342,7 @@ class CLI(argparse.ArgumentParser):
         func: Callable[[Parameters, argparse.Namespace], Engine],
         variable: str,
     ) -> None:
-        param_symbol = Parameters._load_external(Path(args.config), variable)
+        param_symbol = load_external(Path(args.config), variable)
         if not callable(param_symbol):
             raise NotImplementedError(f'"{variable}" in "{args.config}" is not a function and thus has no arguments')
 

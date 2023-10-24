@@ -371,7 +371,7 @@ class Parameters:
                b = value_B
             )
         """
-        params = cls._load_external(Path(filename), variable)
+        params = load_external(Path(filename), variable)
 
         if callable(params):
             if cls.__cast:
@@ -404,37 +404,37 @@ class Parameters:
         yield
         Parameters.__cast = state
 
-    @classmethod
-    def _load_external(cls, filename: Path, variable: str) -> Union[Parameters, Callable[..., Parameters]]:
-        tried = [str(filename.resolve())]
-        if not (filename.is_file() or filename.is_absolute()):
-            for stackframe in inspect.stack()[2:]:
-                stackfile = Path(stackframe.filename).parent.joinpath(filename)
-                tried.append(str(stackfile.resolve()))
-                if stackfile.is_file():
-                    filename = stackfile
-                    break
 
-        if not filename.is_file():
-            raise FileNotFoundError(f'Could not find file, tried following paths: {tried}')
+def load_external(filename: Path, variable: str) -> Union[Parameters, Callable[..., Parameters]]:
+    tried = [str(filename.resolve())]
+    if not (filename.is_file() or filename.is_absolute()):
+        for stackframe in inspect.stack()[2:]:
+            stackfile = Path(stackframe.filename).parent.joinpath(filename)
+            tried.append(str(stackfile.resolve()))
+            if stackfile.is_file():
+                filename = stackfile
+                break
 
-        try:
-            path_import = re.sub(r'[^a-zA-Z0-9]', '_', str(filename))
-            spec = cast(importlib.machinery.ModuleSpec, importlib.util.spec_from_file_location(f'striker.cfg.{path_import}', filename))
-            cfg = importlib.util.module_from_spec(spec)
-            cast(importlib.abc.Loader, spec.loader).exec_module(cfg)
-        except AttributeError as err:
-            raise ImportError(f'Failed to import the file [{filename}]. Are you sure it is a valid python file?') from err
+    if not filename.is_file():
+        raise FileNotFoundError(f'Could not find file, tried following paths: {tried}')
 
-        try:
-            params = getattr(cfg, variable)
-        except AttributeError as err:
-            raise AttributeError(f'Configuration variable [{variable}] not found in file [{filename}]') from err
+    try:
+        path_import = re.sub(r'[^a-zA-Z0-9]', '_', str(filename))
+        spec = cast(importlib.machinery.ModuleSpec, importlib.util.spec_from_file_location(f'striker.cfg.{path_import}', filename))
+        cfg = importlib.util.module_from_spec(spec)
+        cast(importlib.abc.Loader, spec.loader).exec_module(cfg)
+    except AttributeError as err:
+        raise ImportError(f'Failed to import the file [{filename}]. Are you sure it is a valid python file?') from err
 
-        if not callable(params) and not isinstance(params, Parameters):
-            raise TypeError(f'Configuration variable "{variable}" should be a Parameters object [{type(params)}]')
+    try:
+        params = getattr(cfg, variable)
+    except AttributeError as err:
+        raise AttributeError(f'Configuration variable [{variable}] not found in file [{filename}]') from err
 
-        return params
+    if not callable(params) and not isinstance(params, Parameters):
+        raise TypeError(f'Configuration variable "{variable}" should be a Parameters object [{type(params)}]')
+
+    return params
 
 
 def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This function is not very complex, but has lots of checks
