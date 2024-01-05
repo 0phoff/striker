@@ -294,6 +294,9 @@ class Parameters:
             setattr(new, key, value)
         return new
 
+    def __contains__(self, value: str) -> bool:
+        return value in self.keys()
+
     def __iter__(self) -> Iterator[str]:
         """ Return an iterator of :func:`~striker.Parameters.keys()`, so we can loop over this object like a python dictionary. """
         return iter(self.keys())
