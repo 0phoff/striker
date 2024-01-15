@@ -114,7 +114,7 @@ class Parameters:
         state = torch.load(filename, 'cpu')
 
         if not len(keys):
-            keys = tuple(k for k in state.keys() if k not in self.__no_serialize and k not in self.__skip_serialize)
+            keys = tuple(k for k in state.keys() if k not in self.__skip_serialize)
 
         for k in keys:
             if k not in state:
