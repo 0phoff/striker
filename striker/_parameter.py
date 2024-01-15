@@ -28,6 +28,12 @@ class Parameters:
         'epoch': 0,
         'batch': 0,
     }
+    __skip_serialize: list[str] = [
+        '_Parameters__cast',
+        '_Parameters__init_done',
+        '_Parameters__on_load',
+        '_Parameters__automatic',
+    ]
 
     def __init__(self, **kwargs: Any):
         for key, value in self.__automatic.items():
@@ -73,7 +79,7 @@ class Parameters:
         state = {}
 
         if not len(keys):
-            keys = tuple(k for k in vars(self).keys() if k not in self.__no_serialize)
+            keys = tuple(k for k in vars(self).keys() if k not in self.__no_serialize and k not in self.__skip_serialize)
 
         for k in keys:
             v = vars(self)[k]
@@ -108,7 +114,7 @@ class Parameters:
         state = torch.load(filename, 'cpu')
 
         if not len(keys):
-            keys = state.keys()
+            keys = tuple(k for k in state.keys() if k not in self.__no_serialize and k not in self.__skip_serialize)
 
         for k in keys:
             if k not in state:
