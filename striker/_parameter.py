@@ -33,6 +33,7 @@ class Parameters:
         '_Parameters__init_done',
         '_Parameters__on_load',
         '_Parameters__automatic',
+        '_Parameters__no_serialize',
     ]
 
     def __init__(self, **kwargs: Any):
