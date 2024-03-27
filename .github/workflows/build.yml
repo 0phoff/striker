@@ -28,7 +28,7 @@ jobs:
           poetry install --all-extras
 
       - name: Ruff
-        run: poetry run ruff check
+        run: poetry run ruff check --output-format=github
 
       - name: MyPy
         run: poetry run mypy striker
