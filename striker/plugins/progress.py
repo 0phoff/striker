@@ -8,7 +8,7 @@ import logging
 import sys
 import time
 
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, ProgressColumn, TextColumn, filesize
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, ProgressColumn, TextColumn, filesize  # type: ignore[attr-defined]
 from rich.table import Column
 from rich.text import Text
 
@@ -306,9 +306,9 @@ class SpeedColumn(ProgressColumn):
             unit, suffix = filesize.pick_unit_and_suffix(int(speed), ['s', 'm', 'h'], 60)
             speed /= unit
 
-            if suffix == 'h' and speed >= 36:  # type: ignore[operator]
-                # Over 1.5 days, so we show in days instead of hours
-                speed /= 24  # type: ignore[operator]
+            # Over 1.5 days, so we show in days instead of hours
+            if suffix == 'h' and speed >= 36:
+                speed /= 24
                 suffix = 'd'
 
             return Text(f'({speed:.1f} {suffix}/it)', style='progress.remaining')

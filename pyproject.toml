@@ -28,6 +28,7 @@ mypy = "^1.6.1"
 ruff = "^0.3.4"
 
 [tool.mypy]
+python_version = "3.9"
 follow_imports = 'silent'
 strict_optional = true
 warn_redundant_casts = true
@@ -38,11 +39,10 @@ no_implicit_reexport = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 show_error_codes = true
-python_version = "3.9"
 
 [tool.ruff]
-line-length = 150
 target-version = "py39"
+line-length = 150
 extend-exclude = [".sandbox"]
 
 [tool.ruff.lint]
