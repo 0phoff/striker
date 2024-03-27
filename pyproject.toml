@@ -58,7 +58,6 @@ unfixable = ["B"]
 
 [tool.ruff.format]
 quote-style = "single"
-skip-magic-trailing-comma = true
 
 [tool.poetry-dynamic-versioning]
 enable = true

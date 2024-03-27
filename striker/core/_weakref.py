@@ -38,6 +38,7 @@ class PersistentWeakRef(Generic[T]):
     The biggest usecase is for storing a weakref to a parent object (child cannot outlive parent).
     This is very similar to a weakref.proxy, but it doesn't raise an error (be carefull) and the actual object is returned through ``.ref``
     """
+
     def __init__(self, obj: T):
         self.__object = weakref.ref(obj)
 

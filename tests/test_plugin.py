@@ -8,7 +8,8 @@ striker.core.HookParent.__hook_check__ = 'raise'
 
 
 def test_api():
-    """ Test general plugin API """
+    """Test general plugin API"""
+
     class ParentProtocol(Protocol):
         value: int
 
@@ -46,7 +47,8 @@ def test_api():
 
 
 def test_protocol_fail():
-    """ Test that the code raises an error when protocol is not matched. """
+    """Test that the code raises an error when protocol is not matched."""
+
     class ParentProtocol(Protocol):
         doesnotexist: float
 
@@ -64,7 +66,8 @@ def test_protocol_fail():
 
 
 def test_disable():
-    """ Test that disabling a plugin works correctly """
+    """Test that disabling a plugin works correctly"""
+
     class CustomPlugin(striker.core.Plugin, hook_types=['a']):
         @striker.hooks.a
         def hook(self):
@@ -95,7 +98,8 @@ def test_disable():
 
 
 def test_multiple_parents():
-    """ Test that plugins work correctly when multiple PluginParent instances are created """
+    """Test that plugins work correctly when multiple PluginParent instances are created"""
+
     class CustomPlugin(striker.core.Plugin, hook_types=['a']):
         @striker.hooks.a
         def hook(self):
@@ -134,7 +138,8 @@ def test_multiple_parents():
 
 
 def test_inheritance_parent():
-    """ Test that plugins work correctly when a PluginParent is inherited """
+    """Test that plugins work correctly when a PluginParent is inherited"""
+
     class CustomPluginA(striker.core.Plugin, hook_types=['a']):
         @striker.hooks.a
         def hook(self):
@@ -179,7 +184,8 @@ def test_inheritance_parent():
 
 
 def test_inheritance_plugin():
-    """ Test that plugins work correctly when it is inherited """
+    """Test that plugins work correctly when it is inherited"""
+
     class ParentPlugin(striker.core.Plugin, hook_types=['a']):
         @striker.hooks.a
         def hook_a(self):

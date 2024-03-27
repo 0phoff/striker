@@ -8,7 +8,7 @@ __all__ = ['TrainValidation_EngineMixin']
 log = logging.getLogger(__name__)
 
 
-class ParentProtocol(Train_EngineMixin.__protocol__, Protocol):      # type: ignore
+class ParentProtocol(Train_EngineMixin.__protocol__, Protocol):  # type: ignore
     validation_rate: Union[list[Union[int, slice]], int, slice, None] = slice(None, None, 1)
     """
     When to run the validation.
@@ -30,6 +30,7 @@ class TrainValidation_EngineMixin(Train_EngineMixin, protocol=ParentProtocol):
     EngineMixin that keeps running through a dataset forever and occasionally will run the `mixin_engine_validation`.
     This is only really useful as a training engine.
     """
+
     __type_check__: Literal['none', 'log', 'raise'] = 'raise'
 
     def __init__(self, validation_mode: Literal['batch', 'epoch'] = 'epoch') -> None:

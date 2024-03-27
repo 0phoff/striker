@@ -11,7 +11,8 @@ T = TypeVar('T', bound=BaseParent)
 
 
 class Base(HookParent, Generic[T]):
-    """ Base Class for Plugins and Mixins. """
+    """Base Class for Plugins and Mixins."""
+
     __parent: OptionalRef[T]
     __enabled: bool
 

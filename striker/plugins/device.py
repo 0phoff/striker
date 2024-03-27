@@ -22,8 +22,9 @@ class DevicePlugin(Plugin, protocol=ParentProtocol):
         The plugin only works if your datasets return either a tensor, a sequence with tensors or a mappable with tensors.
         Any other type is simply left as is.
     """
+
     __type_check__: Literal['none', 'log', 'raise'] = 'none'
-    parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
+    parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
 
     @hooks.engine_begin
     def cast_params(self) -> None:

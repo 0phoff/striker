@@ -8,14 +8,7 @@ import logging
 import sys
 import time
 
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    ProgressColumn,
-    TextColumn,
-    filesize,
-)
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, ProgressColumn, TextColumn, filesize
 from rich.table import Column
 from rich.text import Text
 
@@ -49,8 +42,9 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
         The ``max_epochs`` and/or ``max_batches`` values are purely used for the progress bar and will not actually stop the training.
         See :class:`~striker.plugins.quit.QuitPlugin` for a plugin that actually stops training.
     """
+
     __type_check__: Literal['none', 'log', 'raise'] = 'none'
-    parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
+    parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
 
     PRINT_DELAY_MIN: int = 1 * 60
     PRINT_DELAY_MAX: int = 10 * 60
@@ -80,13 +74,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
 
         if entry == 'train':
             self.p_epoch = self.progress.add_task(
-                'Train',
-                completed=self.parent.epoch,
-                total=max_epochs,
-                marker=' E',
-                post_text='',
-                last_print=self.progress.get_time(),
-                first=True,
+                'Train', completed=self.parent.epoch, total=max_epochs, marker=' E', post_text='', last_print=self.progress.get_time(), first=True
             )
 
             self.p_batch = self.progress.add_task(
@@ -102,22 +90,12 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
 
         if entry in ('train', 'validation'):
             self.p_validation = self.progress.add_task(
-                'Validation',
-                start=False,
-                visible=False,
-                marker=' B',
-                post_text=self.validation_text,
-                last_print=self.progress.get_time(),
+                'Validation', start=False, visible=False, marker=' B', post_text=self.validation_text, last_print=self.progress.get_time()
             )
 
         if entry == 'test':
             self.p_test = self.progress.add_task(
-                'Test',
-                start=False,
-                visible=False,
-                marker=' B',
-                post_text=self.test_text,
-                last_print=self.progress.get_time(),
+                'Test', start=False, visible=False, marker=' B', post_text=self.test_text, last_print=self.progress.get_time()
             )
 
         if self.tty:
@@ -198,7 +176,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
         self.refresh()
 
     def refresh(self) -> None:
-        """ Update all progress bars post_text and refresh progress. """
+        """Update all progress bars post_text and refresh progress."""
         p_train = getattr(self, 'p_batch', None)
         if p_train is not None:
             self.progress.update(p_train, post_text=self.train_text)
@@ -214,7 +192,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
         self.progress.refresh()
 
     def print_train(self) -> None:
-        """ Print training progress bar (in case we do not have TTY connected). """
+        """Print training progress bar (in case we do not have TTY connected)."""
         with self.progress._lock:
             current_time = self.progress.get_time()
             task_epoch = self.progress._tasks[self.p_epoch]
@@ -237,7 +215,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
                 print(' | '.join(t for t in texts if len(t)), flush=True)
 
     def print_test(self, task_id: 'TaskID') -> None:
-        """ Print test/validation progress bar (in case we do not have TTY connected). """
+        """Print test/validation progress bar (in case we do not have TTY connected)."""
         with self.progress._lock:
             current_time = self.progress.get_time()
             task = self.progress._tasks[task_id]
@@ -290,7 +268,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
     @property
     def train_text(self) -> str:
         text = getattr(self, '_train_text', None)
-        return f'\[{text}]' if text is not None else ''     # NOQA: W605 - rich requires escape of [
+        return f'\[{text}]' if text is not None else ''  # NOQA: W605 - rich requires escape of [
 
     @train_text.setter
     def train_text(self, value: str) -> None:
@@ -299,7 +277,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
     @property
     def validation_text(self) -> str:
         text = getattr(self, '_validation_text', None)
-        return f'\[{text}]' if text is not None else ''     # NOQA: W605 - rich requires escape of [
+        return f'\[{text}]' if text is not None else ''  # NOQA: W605 - rich requires escape of [
 
     @validation_text.setter
     def validation_text(self, value: str) -> None:
@@ -308,7 +286,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
     @property
     def test_text(self) -> str:
         text = getattr(self, '_test_text', None)
-        return f'\[{text}]' if text is not None else ''     # NOQA: W605 - rich requires escape of [
+        return f'\[{text}]' if text is not None else ''  # NOQA: W605 - rich requires escape of [
 
     @test_text.setter
     def test_text(self, value: str) -> None:
@@ -316,7 +294,8 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
 
 
 class SpeedColumn(ProgressColumn):
-    """ Taken from rich.progress.TaskProgressColumn """
+    """Taken from rich.progress.TaskProgressColumn"""
+
     @classmethod
     def render_speed(cls, speed: Optional[float]) -> Text:
         if speed is None:
@@ -327,9 +306,9 @@ class SpeedColumn(ProgressColumn):
             unit, suffix = filesize.pick_unit_and_suffix(int(speed), ['s', 'm', 'h'], 60)
             speed /= unit
 
-            if suffix == 'h' and speed >= 36:   # type: ignore[operator]
+            if suffix == 'h' and speed >= 36:  # type: ignore[operator]
                 # Over 1.5 days, so we show in days instead of hours
-                speed /= 24     # type: ignore[operator]
+                speed /= 24  # type: ignore[operator]
                 suffix = 'd'
 
             return Text(f'({speed:.1f} {suffix}/it)', style='progress.remaining')
@@ -344,15 +323,14 @@ class SpeedColumn(ProgressColumn):
 
 
 class TimeColumn(ProgressColumn):
-    """ Taken from rich.progress.TimeRemainingColumn and rich.progress.TimeElapsedColumn """
+    """Taken from rich.progress.TimeRemainingColumn and rich.progress.TimeElapsedColumn"""
+
     def render(self, task: 'Task') -> Text:
         if task.finished or task.total is None:
             return self.render_elapsed(task, 'progress.elapsed')
 
         return Text.assemble(
-            self.render_elapsed(task, 'progress.elapsed'),
-            Text('/', style='progress.elapsed'),
-            self.render_remaining(task, 'progress.elapsed'),
+            self.render_elapsed(task, 'progress.elapsed'), Text('/', style='progress.elapsed'), self.render_remaining(task, 'progress.elapsed')
         )
 
     def render_elapsed(self, task: 'Task', style: str) -> Text:

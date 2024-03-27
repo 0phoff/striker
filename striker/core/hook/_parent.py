@@ -55,22 +55,18 @@ class HookParent:
         ...         self.hooks.run(type='b', index=7)
         ...         self.hooks.run(type='c', kwargs={'extra': 123})
     """
+
     hooks: HookManager
     __type_check__: Literal['none', 'log', 'raise'] = 'log'
     __protocol__: Optional[Union[type, ProtocolChecker]] = None
 
-    def __init_subclass__(
-        cls,
-        /,
-        protocol: Optional[type] = None,
-        **kwargs: Any,
-    ) -> None:
+    def __init_subclass__(cls, /, protocol: Optional[type] = None, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         if protocol is not None:
             cls.__protocol__ = protocol
 
     def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
-        """ Attah a `hook` HookManager object to the instance. """
+        """Attah a `hook` HookManager object to the instance."""
         obj = super().__new__(cls)
         obj.hooks = HookManager(obj)
         return obj

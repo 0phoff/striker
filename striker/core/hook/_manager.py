@@ -50,8 +50,8 @@ class HookManager:
         /,
         type: Optional[str] = None,
         index: Optional[int] = None,
-        args: Sequence[Any] = [],       # NOQA: B006 - Read only argument
-        kwargs: dict[str, Any] = {},    # NOQA: B006 - Read only argument
+        args: Sequence[Any] = [],  # NOQA: B006 - Read only argument
+        kwargs: dict[str, Any] = {},  # NOQA: B006 - Read only argument
     ) -> Callable[[], None]:
         # Get hooks
         hooks: Iterable[Hook] = chain(*self.__hooks.values()) if type is None else self.__hooks[type]

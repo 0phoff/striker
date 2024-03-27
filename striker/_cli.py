@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 if TYPE_CHECKING:
-    print: Any          # MyPy complains that print is not defined without this
+    print: Any  # MyPy complains that print is not defined without this
 
 import argparse
 import inspect
@@ -26,6 +26,7 @@ except ImportError:
 
 try:
     from rich_argparse import RichHelpFormatter as HelpFormatter
+
     HelpFormatter.styles['argparse.groups'] = 'bold italic yellow'
 except ImportError:
     from argparse import HelpFormatter
@@ -34,13 +35,7 @@ log = logging.getLogger(__name__)
 
 
 class CustomFormatter(HelpFormatter):
-    def __init__(
-        self,
-        prog: str,
-        indent_increment: int = 2,
-        max_help_position: int = 80,
-        width: Optional[int] = None,
-    ):
+    def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 80, width: Optional[int] = None):
         super().__init__(prog, indent_increment, max_help_position, width)
 
     def _format_action(self, action: argparse.Action) -> str:
@@ -100,39 +95,18 @@ class CLI(argparse.ArgumentParser):
             self.formatter_class = CustomFormatter
 
         self.__parsers: dict[str, argparse.ArgumentParser] = {}
-        subparsers = self.add_subparsers(
-            parser_class=argparse.ArgumentParser,
-            required=True,
-            metavar='subcommand',
-            title='subcommands',
-        )
+        subparsers = self.add_subparsers(parser_class=argparse.ArgumentParser, required=True, metavar='subcommand', title='subcommands')
 
         parent = argparse.ArgumentParser(add_help=False)
-        parent.add_argument(
-            '-c', '--config',
-            type=Path,
-            required=True,
-            help='python parameter file',
-        )
-        parent.add_argument(
-            '-p', '--param',
-            action='append',
-            metavar='KEY=VALUE',
-            help='keyword arguments for parameter file (multiple are allowed)',
-        )
+        parent.add_argument('-c', '--config', type=Path, required=True, help='python parameter file')
+        parent.add_argument('-p', '--param', action='append', metavar='KEY=VALUE', help='keyword arguments for parameter file (multiple are allowed)')
 
         self.__parsers['train'] = subparsers.add_parser(
-            'train',
-            parents=[parent],
-            formatter_class=self.formatter_class,
-            description='Train a model',
-            help='train a model',
+            'train', parents=[parent], formatter_class=self.formatter_class, description='Train a model', help='train a model'
         )
         self.__parsers['train'].set_defaults(subcommand='train')
         self.__parsers['train'].add_argument(
-            '--dry-run',
-            action='store_true',
-            help='Create the engine, but do not run the training routine (useful for debugging in interactive mode)',
+            '--dry-run', action='store_true', help='Create the engine, but do not run the training routine (useful for debugging in interactive mode)'
         )
 
         self.__parsers['test'] = subparsers.add_parser(
@@ -143,49 +117,23 @@ class CLI(argparse.ArgumentParser):
             help='test a model with test data',
         )
         self.__parsers['test'].set_defaults(subcommand='test')
+        self.__parsers['test'].add_argument('--weights', type=Path, default=None, help='Path to stored weights')
+        self.__parsers['test'].add_argument('--dataset', choices=('train', 'validation', 'test'), default='test', help='Dataset to use for testing')
         self.__parsers['test'].add_argument(
-            '--weights',
-            type=Path,
-            default=None,
-            help='Path to stored weights',
-        )
-        self.__parsers['test'].add_argument(
-            '--dataset',
-            choices=('train', 'validation', 'test'),
-            default='test',
-            help='Dataset to use for testing',
-        )
-        self.__parsers['test'].add_argument(
-            '--dry-run',
-            action='store_true',
-            help='Create the engine, but do not run the testing routine (useful for debugging in interactive mode)',
+            '--dry-run', action='store_true', help='Create the engine, but do not run the testing routine (useful for debugging in interactive mode)'
         )
         self.__parsers['protocol'] = subparsers.add_parser(
-            'protocol',
-            parents=[parent],
-            formatter_class=self.formatter_class,
-            description='Show engine protocol',
-            help='show engine protocol',
+            'protocol', parents=[parent], formatter_class=self.formatter_class, description='Show engine protocol', help='show engine protocol'
         )
         self.__parsers['protocol'].set_defaults(subcommand='protocol')
-        self.__parsers['protocol'].add_argument(
-            '--check',
-            action='store_true',
-            help='Check engine against protocol in addition to printing it',
-        )
+        self.__parsers['protocol'].add_argument('--check', action='store_true', help='Check engine against protocol in addition to printing it')
 
         self.__parsers['parameters'] = subparsers.add_parser(
-            'parameters',
-            parents=[parent],
-            formatter_class=self.formatter_class,
-            description='Show parameters',
-            help='show parameters',
+            'parameters', parents=[parent], formatter_class=self.formatter_class, description='Show parameters', help='show parameters'
         )
         self.__parsers['parameters'].set_defaults(subcommand='parameters')
         self.__parsers['parameters'].add_argument(
-            '--signature',
-            action='store_true',
-            help='show parameter signature with its arguments instead of creating it',
+            '--signature', action='store_true', help='show parameter signature with its arguments instead of creating it'
         )
 
         self.__init_done = True
@@ -193,7 +141,7 @@ class CLI(argparse.ArgumentParser):
     def __getitem__(self, name: str) -> argparse.ArgumentParser:
         return self.__parsers[name]
 
-    def add_argument(self, *args: Any, **kwargs: Any) -> Optional[argparse.Action]:     # type: ignore[override]
+    def add_argument(self, *args: Any, **kwargs: Any) -> Optional[argparse.Action]:  # type: ignore[override]
         if not self.__init_done:
             return super().add_argument(*args, **kwargs)
 
@@ -230,12 +178,7 @@ class CLI(argparse.ArgumentParser):
             else:
                 self.__parameters(parsed_args, func, variable)
 
-    def __train(
-        self,
-        args: argparse.Namespace,
-        func: Callable[[Parameters, argparse.Namespace], Engine],
-        variable: str,
-    ) -> None:
+    def __train(self, args: argparse.Namespace, func: Callable[[Parameters, argparse.Namespace], Engine], variable: str) -> None:
         params = self.__get_parameters(args, variable)
 
         self.__engine = func(params, args)
@@ -249,12 +192,7 @@ class CLI(argparse.ArgumentParser):
 
         self.__engine.train()
 
-    def __test(
-        self,
-        args: argparse.Namespace,
-        func: Callable[[Parameters, argparse.Namespace], Engine],
-        variable: str,
-    ) -> None:
+    def __test(self, args: argparse.Namespace, func: Callable[[Parameters, argparse.Namespace], Engine], variable: str) -> None:
         params = self.__get_parameters(args, variable)
         self.__load_weights(params, args.weights)
 
@@ -269,12 +207,7 @@ class CLI(argparse.ArgumentParser):
 
         self.__engine.test(args.dataset)
 
-    def __protocol(
-        self,
-        args: argparse.Namespace,
-        func: Callable[[Parameters, argparse.Namespace], Engine],
-        variable: str,
-    ) -> None:
+    def __protocol(self, args: argparse.Namespace, func: Callable[[Parameters, argparse.Namespace], Engine], variable: str) -> None:
         EngineCls: Optional[type[Engine]] = None
         if inspect.isclass(func) and issubclass(func, Engine):
             EngineCls = func
@@ -306,18 +239,14 @@ class CLI(argparse.ArgumentParser):
             assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
             print(self.__engine.protocol)
 
-    def __protocol_check(
-        self,
-        args: argparse.Namespace,
-        func: Callable[[Parameters, argparse.Namespace], Engine],
-        variable: str,
-    ) -> None:
+    def __protocol_check(self, args: argparse.Namespace, func: Callable[[Parameters, argparse.Namespace], Engine], variable: str) -> None:
         params = self.__get_parameters(args, variable)
         self.__engine = func(params, args)
         assert isinstance(self.__engine, Engine), f'Function "{func.__name__}" should return an Engine instance'
 
         try:
             from rich.table import Table
+
             table = Table('', '', show_header=False, border_style='dim', expand=True, highlight=True, show_edge=False)
             table.add_row(self.__engine.protocol, self.__engine.protocol.checker(self.__engine))
             print(table)
@@ -325,21 +254,11 @@ class CLI(argparse.ArgumentParser):
             print(self.__engine.protocol)
             print(self.__engine.protocol.checker(self.__engine))
 
-    def __parameters(
-        self,
-        args: argparse.Namespace,
-        func: Callable[[Parameters, argparse.Namespace], Engine],
-        variable: str,
-    ) -> None:
+    def __parameters(self, args: argparse.Namespace, func: Callable[[Parameters, argparse.Namespace], Engine], variable: str) -> None:
         self.__param = self.__get_parameters(args, variable)
         print(self.__param)
 
-    def __parameters_signature(
-        self,
-        args: argparse.Namespace,
-        func: Callable[[Parameters, argparse.Namespace], Engine],
-        variable: str,
-    ) -> None:
+    def __parameters_signature(self, args: argparse.Namespace, func: Callable[[Parameters, argparse.Namespace], Engine], variable: str) -> None:
         param_symbol = load_external(Path(args.config), variable)
         if not callable(param_symbol):
             raise NotImplementedError(f'"{variable}" in "{args.config}" is not a function and thus has no arguments')

@@ -38,7 +38,8 @@ class LoopMixin(Mixin, ABC):
 
         After the loop, you can optionally delete the dataloader property.
     """
-    parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
+
+    parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
     __dataloader: Optional[DataLoader[Any]] = None
     __looping: bool = False
 
@@ -49,7 +50,7 @@ class LoopMixin(Mixin, ABC):
     def __set_name__(self, owner: Any, name: str) -> None:
         for prefix in ('mixin_', 'loop_'):
             if name.startswith(prefix):
-                name = name[len(prefix):]
+                name = name[len(prefix) :]
         self.name = name
 
     def __iter__(self) -> Iterator[None]:

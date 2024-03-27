@@ -41,13 +41,11 @@ class ParentProtocol(Protocol):
         ...
 
 
-class Engine(
-    HookParent, PluginParent, MixinParent,
-    protocol=ParentProtocol,
-):
+class Engine(HookParent, PluginParent, MixinParent, protocol=ParentProtocol):
     """
     TODO
     """
+
     __type_check__: Literal['none', 'log', 'raise'] = 'raise'
     __entry__: Optional[Literal['train', 'test']] = None
     __init_done: bool = False
@@ -98,7 +96,7 @@ class Engine(
 
         self.run_hook(type='engine_begin', args=[self.__entry__])
         try:
-            self.mixin_data.test = dataset      # type: ignore[assignment]
+            self.mixin_data.test = dataset  # type: ignore[assignment]
             self.mixin_engine_test()
         finally:
             self.run_hook(type='engine_end', args=[self.__entry__])
@@ -108,10 +106,10 @@ class Engine(
         /,
         type: Optional[str] = None,
         index: Optional[int] = None,
-        args: Sequence[Any] = [],       # NOQA: B006 - Read only argument
-        kwargs: dict[str, Any] = {},    # NOQA: B006 - Read only argument
+        args: Sequence[Any] = [],  # NOQA: B006 - Read only argument
+        kwargs: dict[str, Any] = {},  # NOQA: B006 - Read only argument
     ) -> None:
-        """ This method runs all hooks in mixins, plugins and on the engine itself. """
+        """This method runs all hooks in mixins, plugins and on the engine itself."""
         # Get run functions
         run_hooks = self.hooks.run(type=type, index=index, args=args, kwargs=kwargs)
         run_plugins = self.plugins.run(type=type, index=index, args=args, kwargs=kwargs)
@@ -134,6 +132,7 @@ class Engine(
             PyTorch optimizers and the ReduceLROnPlateau classes do not have a `to()` function implemented.
             For these objects, this function will go through all their necessary attributes and cast the tensors to the right device.
         """
+
         def manual_to(obj: dict[Any, Any]) -> None:
             for param in obj.values():
                 if isinstance(param, torch.Tensor):
@@ -144,10 +143,7 @@ class Engine(
                     manual_to(param)
 
         for _name, value in self.__loop_values(
-            torch.nn.Module,
-            torch.optim.Optimizer,
-            torch.optim.lr_scheduler._LRScheduler,
-            torch.optim.lr_scheduler.ReduceLROnPlateau,
+            torch.nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler, torch.optim.lr_scheduler.ReduceLROnPlateau
         ):
             if isinstance(value, torch.nn.Module):
                 value.to(*args, **kwargs)

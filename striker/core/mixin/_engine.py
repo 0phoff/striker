@@ -25,7 +25,8 @@ class EngineMixin(Mixin, ABC):
     User Details:
         Create a mixin object and run it by calling it.
     """
-    parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
+
+    parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
     name: str
     __reset_flags: bool = True
 
@@ -36,12 +37,12 @@ class EngineMixin(Mixin, ABC):
     def __set_name__(self, owner: Any, name: str) -> None:
         for prefix in ('mixin_', 'engine_'):
             if name.startswith(prefix):
-                name = name[len(prefix):]
+                name = name[len(prefix) :]
         self.name = name
 
     @property
     def quit(self) -> bool:
-        """ Check parent __sigint__ and __quit__ flags and reset them. """
+        """Check parent __sigint__ and __quit__ flags and reset them."""
         sigint = getattr(self.parent, '__sigint__', None)
         if self.__reset_flags and sigint is not None:
             self.parent.__sigint__ = False

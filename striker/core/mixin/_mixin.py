@@ -20,6 +20,7 @@ class Mixin(Base[MixinParent]):
     """
     TODO
     """
+
     def bind(self, parent: MixinParent) -> Mixin:
         return cast(Mixin, super().bind(parent))
 

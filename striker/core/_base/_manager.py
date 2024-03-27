@@ -5,7 +5,7 @@ from typing import Any, Callable, Generic, Iterable, Optional, Sequence, TypeVar
 from .._protocol import ProtocolChecker
 from ._base import Base
 
-T = TypeVar('T', bound=Base)                # type: ignore[type-arg]
+T = TypeVar('T', bound=Base)  # type: ignore[type-arg]
 
 
 class BaseManager(Generic[T]):
@@ -21,8 +21,8 @@ class BaseManager(Generic[T]):
         /,
         type: Optional[str] = None,
         index: Optional[int] = None,
-        args: Sequence[Any] = [],       # NOQA: B006 - Read only argument
-        kwargs: dict[str, Any] = {},    # NOQA: B006 - Read only argument
+        args: Sequence[Any] = [],  # NOQA: B006 - Read only argument
+        kwargs: dict[str, Any] = {},  # NOQA: B006 - Read only argument
     ) -> Callable[[], None]:
         # Split hooks
         run_hooks_children: list[Callable[[], None]] = []

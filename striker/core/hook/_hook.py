@@ -18,6 +18,7 @@ class HookDecorator:
 
     This is an internal class and should probably never be used by end users.
     """
+
     def __init__(self, type: str, parent: Optional[HookParent] = None):
         self.type = type
         self.parent = parent
@@ -28,10 +29,7 @@ class HookDecorator:
         if isinstance(indices, (int, slice)):
             indices = (indices,)
 
-        self.indices = tuple(
-            idx if isinstance(idx, slice) else slice(idx, idx + 1)
-            for idx in indices
-        )
+        self.indices = tuple(idx if isinstance(idx, slice) else slice(idx, idx + 1) for idx in indices)
 
         return self
 
@@ -54,14 +52,9 @@ class Hook:
 
     You should not need to manually create hooks, but rather use the :class:`striker.Hooks`.
     """
+
     def __init__(  # noqa: C901 - This is not a complex function, it just contains a lot of checks
-        self,
-        type: str,
-        indices: tuple[slice, ...],
-        fn: HookFunction,
-        parent: Optional[HookParent] = None,
-        timing: int = 0,
-        enabled: bool = True,
+        self, type: str, indices: tuple[slice, ...], fn: HookFunction, parent: Optional[HookParent] = None, timing: int = 0, enabled: bool = True
     ) -> None:
         self.type = type
         self.indices = indices
@@ -102,7 +95,7 @@ class Hook:
     def __call__(self, *args: Any, **kwargs: Any) -> None:
         # Filter arguments if function takes less
         if self.__arg_count is not None:
-            args = args[:self.__arg_count]
+            args = args[: self.__arg_count]
         if self.__kwarg_names is not None:
             kwargs = {name: value for name, value in kwargs.values() if name in self.__kwarg_names}
         self.fn(*args, **kwargs)
@@ -111,23 +104,11 @@ class Hook:
         return f'<Hook: fn={repr(self.fn)}>'
 
     def bind(self, parent: HookParent) -> Hook:
-        """ Bind a hook to a parent instance, so it will be called as a method. """
-        return self.__class__(
-            self.type,
-            self.indices,
-            self.fn,
-            parent,
-            self.timing,
-            self.enabled,
-        )
+        """Bind a hook to a parent instance, so it will be called as a method."""
+        return self.__class__(self.type, self.indices, self.fn, parent, self.timing, self.enabled)
 
-    def is_active(
-        self,
-        *,
-        type: Optional[str] = None,
-        index: Optional[int] = None,
-    ) -> bool:
-        """ Check if a hook should be run under these circumstances. """
+    def is_active(self, *, type: Optional[str] = None, index: Optional[int] = None) -> bool:
+        """Check if a hook should be run under these circumstances."""
         if not self.enabled:
             return False
 

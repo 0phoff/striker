@@ -22,13 +22,11 @@ class Parameters:
     """
     TODO
     """
+
     __cast: bool = False
     __init_done: bool = False
     __on_load: Optional[Callable[[Parameters], None]]
-    __automatic: dict[str, Any] = {
-        'epoch': 0,
-        'batch': 0,
-    }
+    __automatic: dict[str, Any] = {'epoch': 0, 'batch': 0}
     __skip_serialize: list[str] = [
         '_Parameters__cast',
         '_Parameters__init_done',
@@ -127,9 +125,9 @@ class Parameters:
 
             if hasattr(current, 'load_state_dict'):
                 try:
-                    current.load_state_dict(v, strict=strict)   # type: ignore[union-attr]
+                    current.load_state_dict(v, strict=strict)  # type: ignore[union-attr]
                 except TypeError:
-                    current.load_state_dict(v)                  # type: ignore[union-attr]
+                    current.load_state_dict(v)  # type: ignore[union-attr]
             else:
                 setattr(self, k, v)
 
@@ -138,7 +136,7 @@ class Parameters:
             self.__on_load(self)
 
     def reset(self) -> None:
-        """ Resets automatic variables epoch and batch """
+        """Resets automatic variables epoch and batch"""
         for key, value in self.__automatic.items():
             setattr(self, key, value)
 
@@ -154,7 +152,7 @@ class Parameters:
         self.__on_load = func
 
     def get(self, name: str, default: Optional[Any] = None) -> Any:
-        """ Recursively drill down into objects stored on Parameters and get a value.
+        """Recursively drill down into objects stored on Parameters and get a value.
         This item will recursively use ``getattr` to get an item from this object, and return the default value otherwise.
 
         If one of the intermediate objects is a dictionary we use ``obj[attr]``.
@@ -179,20 +177,20 @@ class Parameters:
         return obj
 
     def keys(self) -> list[str]:
-        """ Returns the attributes of your Parameters object, similar to a python dictionary. """
+        """Returns the attributes of your Parameters object, similar to a python dictionary."""
         return sorted(k for k in self.__dict__ if not k.startswith('_Parameters_'))
 
     def values(self) -> Iterable[Any]:
-        """ Returns the attribute values of your Parameters object, similar to a python dictionary. """
+        """Returns the attribute values of your Parameters object, similar to a python dictionary."""
         return (getattr(self, k) for k in self.keys())
 
     def items(self) -> Iterable[tuple[str, Any]]:
-        """ Returns the attribute keys and values of your Parameters object, similar to a python dictionary. """
+        """Returns the attribute keys and values of your Parameters object, similar to a python dictionary."""
         return ((k, getattr(self, k)) for k in self.keys())
 
     def __getattr__(self, item: str) -> Any:
-        """ Allow to fetch items with the underscore. """
-        if item[0] == '_' and item[1:] in self.__no_serialize:        # NOQA: SIM106 - It makes no sense to handle error first
+        """Allow to fetch items with the underscore."""
+        if item[0] == '_' and item[1:] in self.__no_serialize:  # NOQA: SIM106 - It makes no sense to handle error first
             return getattr(self, item[1:])
         raise AttributeError(f"'Parameters' object has no attribute '{item}'")
 
@@ -305,7 +303,7 @@ class Parameters:
         return value in self.keys()
 
     def __iter__(self) -> Iterator[str]:
-        """ Return an iterator of :func:`~striker.Parameters.keys()`, so we can loop over this object like a python dictionary. """
+        """Return an iterator of :func:`~striker.Parameters.keys()`, so we can loop over this object like a python dictionary."""
         return iter(self.keys())
 
     @classmethod
@@ -447,7 +445,7 @@ def load_external(filename: Path, variable: str) -> Union[Parameters, Callable[.
     return params
 
 
-def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This function is not very complex, but has lots of checks
+def cast_arg(param: str, cast_type: type) -> Any:  # NOQA: C901 - This function is not very complex, but has lots of checks
     # String: return as is
     if cast_type == str:
         return param
@@ -470,7 +468,7 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
         raise ValueError(f'Could not convert "{param}" to bool')
 
     # None: check that string is 'none'
-    if cast_type == type(None):     # NOQA: E721 - isinstance with a type causes a TypeError
+    if cast_type == type(None):  # NOQA: E721 - isinstance with a type causes a TypeError
         if param.lower() != 'none':
             raise ValueError(f'Expected string "none", but got "{param}"')
         return None
@@ -531,7 +529,7 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
             subtype = str
             log.warning('Sequence "%s" has no subtype, returning a Sequence[str]', cast_type)
 
-        return origin(cast_arg(s.strip(), subtype) for s in param.split(','))       # type: ignore[call-arg]
+        return origin(cast_arg(s.strip(), subtype) for s in param.split(','))  # type: ignore[call-arg]
 
     # Mapping: split on "," and then on ":". Cast results to basetype
     if inspect.isclass(origin) and issubclass(origin, Mapping):
@@ -553,7 +551,7 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
             key, value = keyvalue.split(':')
             values.append((cast_arg(key.strip(), keytype), cast_arg(value.strip(), valuetype)))
 
-        return origin(values)       # type: ignore[call-arg]
+        return origin(values)  # type: ignore[call-arg]
 
     # Any other
     log.error('Unkown type "%s", cannot convert! Simply returning string', cast_type)

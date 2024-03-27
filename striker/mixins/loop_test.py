@@ -84,6 +84,7 @@ class Test_LoopMixin(LoopMixin):
         infer_fn: Name of the inference method that will be called with each batch of data.
         post_fn: Name of the post-processing method that will be called with the aggregated results of the inference method.
     """
+
     def __init__(self, infer_fn: str = 'infer', post_fn: str = 'post'):
         self.infer_fn = infer_fn
         self.post_fn = post_fn

@@ -43,15 +43,11 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
     ...     def dummy_function(self):
     ...         self.plugins['backupplugin'].save('custom-save-file')
     """
-    __type_check__: Literal['none', 'log', 'raise'] = 'none'
-    parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
 
-    def __init__(
-        self,
-        mode: Literal['batch', 'epoch'] = 'epoch',
-        extension: str = '.param.pt',
-        final: bool = True,
-    ) -> None:
+    __type_check__: Literal['none', 'log', 'raise'] = 'none'
+    parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
+
+    def __init__(self, mode: Literal['batch', 'epoch'] = 'epoch', extension: str = '.param.pt', final: bool = True) -> None:
         self.backup_mode = mode
         self.extension = extension
         self.final = final
