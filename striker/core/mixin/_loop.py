@@ -1,10 +1,14 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Iterator, Optional, Any
+
+from typing import TYPE_CHECKING, Any, Iterator, Optional
+
 if TYPE_CHECKING:
     from torch.utils.data import DataLoader
+
     from ..._engine import Engine
 
 from abc import ABC, abstractmethod
+
 from ._mixin import Mixin
 
 
@@ -13,7 +17,8 @@ class LoopMixin(Mixin, ABC):
     This mixin handles a full dataloader processing loop and is used for training, testing, validation, etc.
 
     Implementation Details:
-        In order to create a new LoopMixin variant, simply create a new superclass and overwrite the :func:`~striker.core.mixin.LoopMixin.loop` method.
+        In order to create a new LoopMixin variant, simply create a new superclass
+        and overwrite the :func:`~striker.core.mixin.LoopMixin.loop` method.
         This method gets a dataloader and should handle processing it.
         You can access the mixin parent throught the ``self.parent`` property.
 
@@ -27,7 +32,8 @@ class LoopMixin(Mixin, ABC):
         To use a LoopMixin, first you need to set the object dataloader property to a valid DataLoader.
         Afterwards, loop over the object to start the processing.
 
-        Note that the object handles processing all the data and simply yields so that the MixinParent can momentarily take back control in order to handle eg. quitting.
+        Note that the object handles processing all the data and simply yields
+        so that the MixinParent can momentarily take back control in order to handle eg. quitting.
         You are expected to always loop through the entire mixin object.
 
         After the loop, you can optionally delete the dataloader property.

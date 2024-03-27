@@ -1,6 +1,7 @@
-from typing import Iterator, Protocol, Optional, Any
+from typing import Any, Iterator, Optional, Protocol
 
 from torch.utils.data import DataLoader
+
 from ..core import LoopMixin, hooks
 
 __all__ = ['Test_LoopMixin']

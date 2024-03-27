@@ -1,9 +1,10 @@
-from typing import Protocol, Union, Any, Literal
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal, Protocol, Union
 
-from collections.abc import Sequence, Mapping
 import torch
-from ..core import Plugin, hooks
+
 from .._engine import Engine
+from ..core import Plugin, hooks
 
 __all__ = ['DevicePlugin']
 

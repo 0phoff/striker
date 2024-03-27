@@ -1,10 +1,13 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Iterator
+
 if TYPE_CHECKING:
     from ..._engine import Engine
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+
 from ._mixin import Mixin
 
 

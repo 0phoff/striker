@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 from typing import Any, TypeVar, cast
 
-from .._base import Base, BaseParent, BaseManager
+from .._base import Base, BaseManager, BaseParent
 
 Self = TypeVar('Self', bound='MixinParent')
 

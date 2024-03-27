@@ -1,7 +1,7 @@
-from typing import Protocol, Literal, Union, cast
 import logging
+from typing import Literal, Protocol, Union, cast
 
-from ..core import EngineMixin, hooks, Hook
+from ..core import EngineMixin, Hook, hooks
 from .engine_train import Train_EngineMixin
 
 __all__ = ['TrainValidation_EngineMixin']

@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Any, Optional, TypeVar, cast
 
 import inspect
-from .._base import Base, BaseParent, BaseManager
+from typing import Any, Optional, TypeVar, cast
+
+from .._base import Base, BaseManager, BaseParent
 
 Self = TypeVar('Self', bound='PluginParent')
 
@@ -63,5 +64,4 @@ class PluginManager(BaseManager[Plugin]):
 
         if name is not None:
             return name.lower()
-        else:
-            return None
+        return None

@@ -1,6 +1,7 @@
 import pytest
-import striker
 import torch
+
+import striker
 
 
 def test_from_file_basic(tmp_path):

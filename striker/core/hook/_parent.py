@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 from typing import Any, Literal, Optional, TypeVar, Union
 
-from ._manager import HookManager
 from .._protocol import ProtocolChecker
+from ._manager import HookManager
 
 Self = TypeVar('Self', bound='HookParent')
 

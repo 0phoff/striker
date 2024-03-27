@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from ..core import LoopMixin, EngineMixin, hooks
+from ..core import EngineMixin, LoopMixin, hooks
 
 __all__ = ['Train_EngineMixin']
 

@@ -1,5 +1,5 @@
-from typing import Callable, Generic, TypeVar, Optional, Union, cast
 import weakref
+from typing import Callable, Generic, Optional, TypeVar, Union, cast
 
 T = TypeVar('T', bound=object)
 
@@ -28,8 +28,7 @@ class OptionalRef(Generic[T]):
         if isinstance(self.__object, weakref.ref):
             obj = self.__object()
             return f'<OptionalRef at {hex(id(self))}; to "{obj.__class__.__name__}" at {hex(id(obj))}>'
-        else:
-            return f'<OptionalRef at {hex(id(self))}; to "None">'
+        return f'<OptionalRef at {hex(id(self))}; to "None">'
 
 
 class PersistentWeakRef(Generic[T]):

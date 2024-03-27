@@ -1,6 +1,7 @@
-from typing import Any, Protocol, Optional, Literal
+from typing import Any, Literal, Optional, Protocol
 
 from torch.utils.data import DataLoader
+
 from ..core import DataMixin
 
 __all__ = ['Property_DataMixin']

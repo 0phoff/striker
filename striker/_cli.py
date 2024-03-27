@@ -1,12 +1,13 @@
-from typing import TYPE_CHECKING, Callable, Optional, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
+
 if TYPE_CHECKING:
     print: Any          # MyPy complains that print is not defined without this
 
 import argparse
 import inspect
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from . import Engine, Parameters
 from ._parameter import load_external
@@ -64,10 +65,7 @@ class CustomFormatter(HelpFormatter):
             indent_first = help_position
 
         # collect the pieces of the action help
-        if action.dest != '==SUPPRESS==' or action.help:
-            parts = [action_header]
-        else:
-            parts = []
+        parts = [action_header] if action.dest != '==SUPPRESS==' or action.help else []
 
         # if there was help for the action, add lines of help text
         if action.help:

@@ -1,16 +1,22 @@
 from __future__ import annotations
-from collections import defaultdict
-from typing import Any, Iterable, Iterator, Optional
 
+import inspect
+import logging
+import re
+from collections import defaultdict
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, auto
-import inspect
 from itertools import chain
-import logging
-import re
+from typing import (  # type: ignore[attr-defined]
+    EXCLUDED_ATTRIBUTES,
+    Any,
+    Iterable,
+    Iterator,
+    Optional,
+)
+
 import typeguard
-from typing import EXCLUDED_ATTRIBUTES      # type: ignore[attr-defined]
 
 with suppress(ImportError):
     from rich import print
@@ -174,8 +180,7 @@ class ProtocolAnnotation(ProtocolAttribute):
         typename = anno_to_string(ttype)
         if value is Missing:
             return f'{name}: {typename}'
-        else:
-            return f'{name}: {typename} = {value}'
+        return f'{name}: {typename} = {value}'
 
 
 @dataclass
@@ -191,7 +196,7 @@ class ProtocolMethod(ProtocolAttribute):
             # Check return annotation
             if (
                 (not isinstance(sig.return_annotation, str) and (sig.return_annotation != sig.empty) and (sig.return_annotation != Any))
-                and (not isinstance(self.signature.return_annotation, str) and (self.signature.return_annotation != self.signature.empty) and (self.signature.return_annotation != Any))
+                and (not isinstance(self.signature.return_annotation, str) and (self.signature.return_annotation != self.signature.empty) and (self.signature.return_annotation != Any))  # noqa: E501 - This would be ugly on multiple lines
                 and (sig.return_annotation != self.signature.return_annotation)
             ):
                 return ProtocolCheckResult.UNKOWN
@@ -213,8 +218,7 @@ class ProtocolMethod(ProtocolAttribute):
                 return ProtocolCheckResult.FAIL
 
             return ProtocolCheckResult.PASS
-        else:
-            return ProtocolCheckResult.FAIL
+        return ProtocolCheckResult.FAIL
 
     def __str__(self) -> str:
         return self.string()
@@ -222,9 +226,9 @@ class ProtocolMethod(ProtocolAttribute):
     def string(self, obj: Any = Missing) -> str:
         if obj is Missing:
             return f'def {self.name}{signature_to_string(self.signature)}'
-        else:
-            signature = inspect.signature(obj)
-            return f'def {self.name}{signature_to_string(signature)}'
+
+        signature = inspect.signature(obj)
+        return f'def {self.name}{signature_to_string(signature)}'
 
 
 @dataclass
@@ -255,21 +259,18 @@ class ProtocolHook(ProtocolMethod):
                 return ProtocolCheckResult.FAIL
 
             return ProtocolCheckResult.PASS
-        else:
-            return ProtocolCheckResult.FAIL
+        return ProtocolCheckResult.FAIL
 
     def string(self, obj: Any = Missing) -> str:
         if obj is Missing:
             return self.create_string(self.name, self.signature)
-        else:
-            return self.create_string(self.name, inspect.signature(obj), obj.get('__name__', None))
+        return self.create_string(self.name, inspect.signature(obj), obj.get('__name__', None))
 
     @staticmethod
     def create_string(type: str, signature: inspect.Signature, name: Optional[str] = None) -> str:
         if name is None:
             return f'@hook.{type}{signature_to_string(signature)}'
-        else:
-            return f'@hook.{type} {name}{signature_to_string(signature)}'
+        return f'@hook.{type} {name}{signature_to_string(signature)}'
 
 
 @dataclass
@@ -365,7 +366,7 @@ class ProtocolChecker:
         type_check = getattr(instance, '__type_check__', 'raise')
 
         if type_check == 'log' and not checker_instance:
-            log.error(f'<{instance.__class__.__name__}> does not implement the Engine Protocol')
+            log.error('<%s> does not implement the Engine Protocol', instance.__class__.__name__)
         elif type_check == 'raise' and not checker_instance:
             print(checker_instance)
             raise TypeError(f'<{instance.__class__.__name__}> does not implement the Engine Protocol')

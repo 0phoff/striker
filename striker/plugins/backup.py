@@ -1,9 +1,9 @@
-from typing import Literal, Protocol, Union, Optional, Any
-
 import logging
 from pathlib import Path
-from ..core import Plugin, hooks
+from typing import Any, Literal, Optional, Protocol, Union
+
 from .._engine import Engine
+from ..core import Plugin, hooks
 
 __all__ = ['BackupPlugin']
 log = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
 
         backup_folder = getattr(self.parent, 'backup_folder', None)
         if backup_folder is None:
-            log.warn('"backup_folder" is None, so no backups will be taken.')
+            log.warning('"backup_folder" is None, so no backups will be taken.')
             self.enabled = False
             return
 
@@ -94,7 +94,7 @@ class BackupPlugin(Plugin, protocol=ParentProtocol):
 
         backup_rate = getattr(self.parent, 'backup_rate', None)
         if backup_rate is None:
-            log.warn('"backup_rate" is None, so no intermediate backups will be taken.')
+            log.warning('"backup_rate" is None, so no intermediate backups will be taken.')
             return
 
         if self.backup_mode == 'batch':

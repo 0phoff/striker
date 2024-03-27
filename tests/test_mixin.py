@@ -1,7 +1,9 @@
 from typing import Protocol
 
 import pytest
+
 import striker
+
 striker.core.HookParent.__hook_check__ = 'raise'
 
 
@@ -30,9 +32,7 @@ def test_api():
             self.mixins.check()
 
         def __getattr__(self, name):
-            if name == 'ab':
-                return None
-            else:
+            if name != 'ab':
                 raise AttributeError(f'{name} attribute does not exist')
 
         @property

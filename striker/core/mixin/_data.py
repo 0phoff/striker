@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Literal, cast
+
 if TYPE_CHECKING:
     from torch.utils.data import DataLoader
+
     from ..._engine import Engine
 
 from abc import ABC, abstractmethod
+
 from ._mixin import Mixin
 
 

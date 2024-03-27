@@ -1,4 +1,5 @@
 import striker
+
 striker.core.HookParent.__hook_check__ = 'raise'
 
 
