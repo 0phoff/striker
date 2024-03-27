@@ -1,6 +1,7 @@
 from typing import Any, Iterator, Optional, Protocol
 
 from torch.utils.data import DataLoader
+
 from .loop_batchtrain import BatchTrain_LoopMixin
 
 __all__ = ['MiniBatchTrain_LoopMixin']

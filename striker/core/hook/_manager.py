@@ -1,20 +1,23 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Iterable, Any, Callable
+
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
     from ._parent import HookParent
 
+import logging
 from collections import defaultdict
 from contextlib import suppress
 from itertools import chain
-import logging
 
 with suppress(ImportError):
     from rich import print
 
 from .._protocol import ProtocolChecker
-from .._weakref import PersistentWeakRef, OptionalRef
-from ._hook import HookDecorator, Hook
+from .._weakref import OptionalRef, PersistentWeakRef
+from ._hook import Hook, HookDecorator
 
 log = logging.getLogger(__name__)
 
@@ -51,11 +54,7 @@ class HookManager:
         kwargs: dict[str, Any] = {},    # NOQA: B006 - Read only argument
     ) -> Callable[[], None]:
         # Get hooks
-        hooks: Iterable[Hook]
-        if type is None:
-            hooks = chain(*self.__hooks.values())
-        else:
-            hooks = self.__hooks[type]
+        hooks: Iterable[Hook] = chain(*self.__hooks.values()) if type is None else self.__hooks[type]
 
         # Split hooks
         split_hooks: tuple[list[Hook], list[Hook], list[Hook]] = ([], [], [])
@@ -97,7 +96,7 @@ class HookManager:
         for hook in chain(*self.__hooks.values()):
             if not protocol_checker.check_hook_type(hook.type):
                 if hook_type_check == 'log':
-                    log.error(f'Unregistered hook type "{hook.type}" in "{self.__parent.ref.__class__.__name__}"')
+                    log.error('Unregistered hook type "%s" in "%s"', hook.type, self.__parent.ref.__class__.__name__)
                 elif hook_type_check == 'raise':
                     print(protocol_checker)
                     raise TypeError(f'Unregistered hook type "{hook.type}" in "{self.__parent.ref.__class__.__name__}"')
@@ -108,7 +107,7 @@ class HookManager:
             protocol_checker = self.__protocol.ref or self.__parent.ref.protocol
             if not protocol_checker.check_hook_type(name):
                 if hook_type_check == 'log':
-                    log.error(f'Unregistered hook type "{name}" in <{self.__parent.ref.__class__.__name__}>')
+                    log.error('Unregistered hook type "%s" in <%s>', name, self.__parent.ref.__class__.__name__)
                 elif hook_type_check == 'raise':
                     print(protocol_checker)
                     raise TypeError(f'Unregistered hook type "{name}" in <{self.__parent.ref.__class__.__name__}>')

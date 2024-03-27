@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Any, Generic, TypeVar
 
 import copy
+from typing import Any, Generic, TypeVar
+
 from .._weakref import OptionalRef
-from ..hook import HookParent, HookManager, Hook
+from ..hook import Hook, HookManager, HookParent
 from ._parent import BaseParent
 
 T = TypeVar('T', bound=BaseParent)

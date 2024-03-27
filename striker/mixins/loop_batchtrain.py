@@ -1,7 +1,8 @@
-from typing import Iterator, Protocol, Optional, Any
+from typing import Any, Iterator, Optional, Protocol
 
-from torch.utils.data import DataLoader
 from torch import Tensor
+from torch.utils.data import DataLoader
+
 from ..core import LoopMixin, hooks
 
 __all__ = ['BatchTrain_LoopMixin']

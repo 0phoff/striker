@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Generic, Iterable, Sequence, Optional, Any, TypeVar, cast, Callable
+
+from typing import Any, Callable, Generic, Iterable, Optional, Sequence, TypeVar, cast
 
 from .._protocol import ProtocolChecker
 from ._base import Base

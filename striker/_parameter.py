@@ -1,16 +1,17 @@
 from __future__ import annotations
-from typing import Any, Callable, Iterator, Union, Optional, Iterable, Literal, cast
 
 import copy
-from contextlib import contextmanager
-from collections.abc import Sequence, Mapping
 import importlib
 import importlib.abc
 import importlib.util
 import inspect
 import logging
-from pathlib import Path
 import re
+from collections.abc import Mapping, Sequence
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any, Callable, Iterable, Iterator, Literal, Optional, Union, cast
+
 import torch
 
 __all__ = ['Parameters']
@@ -80,7 +81,7 @@ class Parameters:
         state = {}
 
         if not len(keys):
-            keys = tuple(k for k in vars(self).keys() if k not in self.__no_serialize and k not in self.__skip_serialize)
+            keys = tuple(k for k in vars(self) if k not in self.__no_serialize and k not in self.__skip_serialize)
 
         for k in keys:
             v = vars(self)[k]
@@ -115,11 +116,11 @@ class Parameters:
         state = torch.load(filename, 'cpu')
 
         if not len(keys):
-            keys = tuple(k for k in state.keys() if k not in self.__skip_serialize)
+            keys = tuple(k for k in state if k not in self.__skip_serialize)
 
         for k in keys:
             if k not in state:
-                log.error(f'Key "{k}" is not present in loaded state from "{filename}"')
+                log.error('Key "%s" is not present in loaded state from "%s"', k, filename)
 
             v = state[k]
             current = getattr(self, k, None)
@@ -191,10 +192,9 @@ class Parameters:
 
     def __getattr__(self, item: str) -> Any:
         """ Allow to fetch items with the underscore. """
-        if item[0] == '_' and item[1:] in self.__no_serialize:        # NOQA: SIM106 - It makes no sens to handle error first
+        if item[0] == '_' and item[1:] in self.__no_serialize:        # NOQA: SIM106 - It makes no sense to handle error first
             return getattr(self, item[1:])
-        else:
-            raise AttributeError(f"'Parameters' object has no attribute '{item}'")
+        raise AttributeError(f"'Parameters' object has no attribute '{item}'")
 
     def __setattr__(self, item: str, value: Any) -> None:
         """
@@ -465,10 +465,9 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
     if cast_type == bool:
         if param.lower() in ('true', 't', 'yes', 'y', '1'):
             return True
-        elif param.lower() in ('false', 'f', 'no', 'n', '0'):
+        if param.lower() in ('false', 'f', 'no', 'n', '0'):
             return False
-        else:
-            raise ValueError(f'Could not convert "{param}" to bool')
+        raise ValueError(f'Could not convert "{param}" to bool')
 
     # None: check that string is 'none'
     if cast_type == type(None):     # NOQA: E721 - isinstance with a type causes a TypeError
@@ -493,7 +492,7 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
         values = getattr(cast_type, '__args__', [])
 
         if not all(isinstance(v, str) for v in values):
-            log.warning(f'Cannot check Literal type with non-string values: {values}')
+            log.warning('Cannot check Literal type with non-string values: %s', values)
             return param
 
         assert param in values, f'"{param}" is not one of the following literal strings: {values}'
@@ -511,8 +510,8 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
             except BaseException:
                 continue
 
-        raise ValueError(f'Could not cast "{param}" to "{cast_type}"') 
-    
+        raise ValueError(f'Could not cast "{param}" to "{cast_type}"')
+
     # Tuple:
     #  - Multiple values (tuple[int, str, float]): cast to matching subtype
     #  - Ellipsis (tuple[int, ...]): cast to first subtype -> Handled by "Sequence" code below
@@ -530,7 +529,7 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
             subtype = subtypes[0]
         else:
             subtype = str
-            log.warning(f'Sequence "{cast_type}" has no subtype, returning a Sequence[str]')
+            log.warning('Sequence "%s" has no subtype, returning a Sequence[str]', cast_type)
 
         return origin(cast_arg(s.strip(), subtype) for s in param.split(','))       # type: ignore[call-arg]
 
@@ -543,11 +542,11 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
         elif len(subtypes):
             keytype = subtypes[0]
             valuetype = str
-            log.warning(f'Mapping "{cast_type}" has no value subtype, returning a Mapping[{keytype}, str]')
+            log.warning('Mapping "%s" has no value subtype, returning a Mapping[%s, str]', cast_type, keytype)
         else:
             keytype = str
             valuetype = str
-            log.warning(f'Mapping "{cast_type}" has no subtypes, returning a Mapping[str, str]')
+            log.warning('Mapping "%s" has no subtypes, returning a Mapping[str, str]', cast_type)
 
         values = []
         for keyvalue in param.split(','):
@@ -557,5 +556,5 @@ def cast_arg(param: str, cast_type: type) -> Any:       # NOQA: C901 - This func
         return origin(values)       # type: ignore[call-arg]
 
     # Any other
-    log.error(f'Unkown type "{cast_type}", cannot convert! Simply returning string')
+    log.error('Unkown type "%s", cannot convert! Simply returning string', cast_type)
     return param

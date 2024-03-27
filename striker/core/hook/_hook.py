@@ -1,10 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Optional, Union, Any
+
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
 if TYPE_CHECKING:
     from ._parent import HookParent
 
-from functools import update_wrapper
 import inspect
+from functools import update_wrapper
 from types import MethodType
 
 HookFunction = Union[MethodType, Callable[..., Any]]
@@ -52,7 +54,7 @@ class Hook:
 
     You should not need to manually create hooks, but rather use the :class:`striker.Hooks`.
     """
-    def __init__(
+    def __init__(  # noqa: C901 - This is not a complex function, it just contains a lot of checks
         self,
         type: str,
         indices: tuple[slice, ...],

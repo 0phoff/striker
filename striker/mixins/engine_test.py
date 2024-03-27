@@ -1,6 +1,6 @@
-from typing import Protocol, Any
+from typing import Any, Protocol
 
-from ..core import LoopMixin, EngineMixin
+from ..core import EngineMixin, LoopMixin
 
 __all__ = ['Test_EngineMixin']
 

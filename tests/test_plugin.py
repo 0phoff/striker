@@ -1,7 +1,9 @@
 from typing import Protocol
 
 import pytest
+
 import striker
+
 striker.core.HookParent.__hook_check__ = 'raise'
 
 

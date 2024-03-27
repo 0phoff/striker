@@ -1,11 +1,11 @@
-from typing import Literal, Protocol, Union, Optional, cast
-
-from contextlib import suppress
 import logging
 import sys
+from contextlib import suppress
 from pathlib import Path
-from ..core import Plugin, hooks
+from typing import Literal, Optional, Protocol, Union, cast
+
 from .._engine import Engine
+from ..core import Plugin, hooks
 
 __all__ = ['LogPlugin']
 log = logging.getLogger(__name__)

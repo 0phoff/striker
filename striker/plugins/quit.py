@@ -1,9 +1,10 @@
-from typing import Optional, Protocol, Literal
-
 import logging
+from typing import Literal, Optional, Protocol
+
 import torch
-from ..core import Plugin, hooks
+
 from .._engine import Engine
+from ..core import Plugin, hooks
 
 __all__ = ['QuitPlugin']
 log = logging.getLogger(__name__)
@@ -49,14 +50,14 @@ class QuitPlugin(Plugin, protocol=ParentProtocol):
                 self.hooks.train_batch_end(self.quit_explode)
 
             if max_epochs is None and max_batches is None:
-                log.warn('"max_epochs" and "max_batches" are None, training might never stop.')
+                log.warning('"max_epochs" and "max_batches" are None, training might never stop.')
 
     def quit_epoch(self, epoch: int) -> None:
-        log.info(f'Quitting at epoch {epoch}')
+        log.info('Quitting at epoch %d', epoch)
         self.parent.quit()
 
     def quit_batch(self, batch: int) -> None:
-        log.info(f'Quitting at batch {batch}')
+        log.info('Quitting at batch %d', batch)
         self.parent.quit()
 
     def quit_explode(self, batch: int, loss: torch.Tensor) -> None:

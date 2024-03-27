@@ -1,23 +1,26 @@
-from typing import TYPE_CHECKING, Literal, Protocol, Optional, cast
+from typing import TYPE_CHECKING, Literal, Optional, Protocol, cast
+
 if TYPE_CHECKING:
     from rich.progress import Task, TaskID
 
-import time
 import datetime
 import logging
 import sys
-from rich.text import Text
-from rich.table import Column
+import time
+
 from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
     Progress,
     ProgressColumn,
     TextColumn,
-    BarColumn,
-    MofNCompleteColumn,
     filesize,
 )
-from ..core import Plugin, hooks
+from rich.table import Column
+from rich.text import Text
+
 from .._engine import Engine
+from ..core import Plugin, hooks
 
 __all__ = ['ProgressBarPlugin']
 log = logging.getLogger(__name__)
@@ -330,11 +333,11 @@ class SpeedColumn(ProgressColumn):
                 suffix = 'd'
 
             return Text(f'({speed:.1f} {suffix}/it)', style='progress.remaining')
-        else:
-            unit, suffix = filesize.pick_unit_and_suffix(int(speed), ['', '×10³', '×10⁶', '×10⁹', '×10¹²'], 1000)
-            speed /= unit
 
-            return Text(f'({speed:.1f}{suffix} it/s)', style='progress.remaining')
+        unit, suffix = filesize.pick_unit_and_suffix(int(speed), ['', '×10³', '×10⁶', '×10⁹', '×10¹²'], 1000)
+        speed /= unit
+
+        return Text(f'({speed:.1f}{suffix} it/s)', style='progress.remaining')
 
     def render(self, task: 'Task') -> Text:
         return self.render_speed(task.finished_speed or task.speed)
@@ -345,12 +348,12 @@ class TimeColumn(ProgressColumn):
     def render(self, task: 'Task') -> Text:
         if task.finished or task.total is None:
             return self.render_elapsed(task, 'progress.elapsed')
-        else:
-            return Text.assemble(
-                self.render_elapsed(task, 'progress.elapsed'),
-                Text('/', style='progress.elapsed'),
-                self.render_remaining(task, 'progress.elapsed'),
-            )
+
+        return Text.assemble(
+            self.render_elapsed(task, 'progress.elapsed'),
+            Text('/', style='progress.elapsed'),
+            self.render_remaining(task, 'progress.elapsed'),
+        )
 
     def render_elapsed(self, task: 'Task', style: str) -> Text:
         elapsed = task.finished_time if task.finished else task.elapsed

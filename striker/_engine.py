@@ -1,15 +1,14 @@
-from typing import Iterator, Literal, Optional, Any, Protocol, TypeVar
-
-from contextlib import contextmanager
-from collections.abc import Sequence
 import logging
 import signal
-import torch
+from collections.abc import Sequence
+from contextlib import contextmanager
 from types import FrameType
+from typing import Any, Iterator, Literal, Optional, Protocol, TypeVar
+
+import torch
 
 from ._parameter import Parameters
-from .core import HookParent, PluginParent, MixinParent, hooks
-from .core import EngineMixin, LoopMixin, DataMixin
+from .core import DataMixin, EngineMixin, HookParent, LoopMixin, MixinParent, PluginParent, hooks
 from .mixins.data_property import Property_DataMixin
 from .mixins.engine_train import Train_EngineMixin
 from .mixins.loop_batchtrain import BatchTrain_LoopMixin
@@ -144,7 +143,12 @@ class Engine(
                 elif isinstance(param, dict):
                     manual_to(param)
 
-        for _name, value in self.__loop_values(torch.nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+        for _name, value in self.__loop_values(
+            torch.nn.Module,
+            torch.optim.Optimizer,
+            torch.optim.lr_scheduler._LRScheduler,
+            torch.optim.lr_scheduler.ReduceLROnPlateau,
+        ):
             if isinstance(value, torch.nn.Module):
                 value.to(*args, **kwargs)
             elif isinstance(value, torch.optim.Optimizer):
