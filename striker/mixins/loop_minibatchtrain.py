@@ -7,7 +7,7 @@ from .loop_batchtrain import BatchTrain_LoopMixin
 __all__ = ['MiniBatchTrain_LoopMixin']
 
 
-class ParentProtocol(BatchTrain_LoopMixin.__protocol__, Protocol):       # type: ignore
+class ParentProtocol(BatchTrain_LoopMixin.__protocol__, Protocol):  # type: ignore
     batch_accumulate: int
     """ Number of batches to accumulate before calling ``optimize()``. """
 

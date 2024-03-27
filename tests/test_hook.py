@@ -4,7 +4,8 @@ striker.core.HookParent.__hook_check__ = 'raise'
 
 
 def test_api():
-    """ Test general hook usage API """
+    """Test general hook usage API"""
+
     class Parent(striker.core.HookParent, hook_types={'a', 'b', 'c'}):
         def __init__(self):
             self.hooks.check()
@@ -54,7 +55,8 @@ def test_api():
 
 
 def test_runtime():
-    """ Test that hooks defined at runtime work and are correctly bound """
+    """Test that hooks defined at runtime work and are correctly bound"""
+
     class Parent(striker.core.HookParent, hook_types={'a', 'b'}):
         def __init__(self):
             self.hooks.check()
@@ -96,7 +98,8 @@ def test_runtime():
 
 
 def test_disable():
-    """ Test that disabling a hook works correctly """
+    """Test that disabling a hook works correctly"""
+
     class Parent(striker.core.HookParent, hook_types={'a'}):
         def __init__(self):
             self.hooks.check()
@@ -124,7 +127,8 @@ def test_disable():
 
 
 def test_multiple_parents():
-    """ Test that multiple parent instances work correctly """
+    """Test that multiple parent instances work correctly"""
+
     class Parent(striker.core.HookParent, hook_types={'a'}):
         def __init__(self):
             self.hooks.check()
@@ -151,7 +155,8 @@ def test_multiple_parents():
 
 
 def test_parent_inheritance():
-    """ Test that inheritance works for parent classes """
+    """Test that inheritance works for parent classes"""
+
     class Parent(striker.core.HookParent, hook_types={'a'}):
         def __init__(self):
             self.hooks.check()
@@ -196,7 +201,8 @@ def test_parent_inheritance():
 
 
 def test_global_hook_type():
-    """ Test that you can pass a global hook_type set """
+    """Test that you can pass a global hook_type set"""
+
     class Parent(striker.core.HookParent):
         @striker.hooks.a
         def hook_a(self):

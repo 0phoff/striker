@@ -108,7 +108,8 @@ def anno_to_string(annotation: Any, base_module: Any = None) -> str:
 
 @dataclass
 class TextLine:
-    """ Printable line of text with rich styles or fallback marker symbols. """
+    """Printable line of text with rich styles or fallback marker symbols."""
+
     text: str
     indentation: int = 0
     style: Optional[str] = None
@@ -124,9 +125,9 @@ class TextLine:
 
 
 class ProtocolCheckResult(Enum):
-    PASS = auto()       # Type-checking is ok
-    UNKOWN = auto()     # Could not perform type-checking or using default value
-    FAIL = auto()       # Failed type-checking
+    PASS = auto()  # Type-checking is ok
+    UNKOWN = auto()  # Could not perform type-checking or using default value
+    FAIL = auto()  # Failed type-checking
 
 
 @dataclass
@@ -149,12 +150,13 @@ class ProtocolAttribute:
 
 @dataclass
 class ProtocolAnnotation(ProtocolAttribute):
-    """ Wrapper around Protocol Annotations for use in :class:`ProtocolWrapper`. """
+    """Wrapper around Protocol Annotations for use in :class:`ProtocolWrapper`."""
+
     type: type
     default: Any
 
     def check(self, attr: Any) -> ProtocolCheckResult:
-        """ Check if attribute has correct instance or if there is a default value. """
+        """Check if attribute has correct instance or if there is a default value."""
         if attr is Missing and self.default is not Missing:
             return ProtocolCheckResult.UNKOWN
 
@@ -185,33 +187,44 @@ class ProtocolAnnotation(ProtocolAttribute):
 
 @dataclass
 class ProtocolMethod(ProtocolAttribute):
-    """ Wrapper around Protocol Methods for use in :class:`ProtocolWrapper`. """
+    """Wrapper around Protocol Methods for use in :class:`ProtocolWrapper`."""
+
     signature: inspect.Signature
 
     def check(self, func: Any) -> ProtocolCheckResult:
-        """ Only checks whether the instance has a callable attribute and not if signatures match. """
+        """Only checks whether the instance has a callable attribute and not if signatures match."""
         if callable(func):
             sig = inspect.signature(getattr(func, '__func__', func))
 
             # Check return annotation
             if (
                 (not isinstance(sig.return_annotation, str) and (sig.return_annotation != sig.empty) and (sig.return_annotation != Any))
-                and (not isinstance(self.signature.return_annotation, str) and (self.signature.return_annotation != self.signature.empty) and (self.signature.return_annotation != Any))  # noqa: E501 - This would be ugly on multiple lines
+                and (
+                    not isinstance(self.signature.return_annotation, str)
+                    and (self.signature.return_annotation != self.signature.empty)
+                    and (self.signature.return_annotation != Any)
+                )  # noqa: E501 - This would be ugly on multiple lines
                 and (sig.return_annotation != self.signature.return_annotation)
             ):
                 return ProtocolCheckResult.UNKOWN
 
             # Check argcount
-            proto_argcount = len([
-                param.name for param in self.signature.parameters.values()
-                if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
-            ])
+            proto_argcount = len(
+                [
+                    param.name
+                    for param in self.signature.parameters.values()
+                    if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
+                ]
+            )
             proto_varargs = any(param for param in self.signature.parameters.values() if param.kind == param.VAR_POSITIONAL)
 
-            func_argcount = len([
-                param.name for param in sig.parameters.values()
-                if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
-            ])
+            func_argcount = len(
+                [
+                    param.name
+                    for param in sig.parameters.values()
+                    if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
+                ]
+            )
             func_varargs = any(param for param in sig.parameters.values() if param.kind == param.VAR_POSITIONAL)
 
             if (not proto_varargs and func_argcount > proto_argcount) or (not func_varargs and func_argcount < proto_argcount):
@@ -233,26 +246,33 @@ class ProtocolMethod(ProtocolAttribute):
 
 @dataclass
 class ProtocolHook(ProtocolMethod):
-    """ Wrapper around Protocol Hooks for use in :class:`ProtocolWrapper`. """
+    """Wrapper around Protocol Hooks for use in :class:`ProtocolWrapper`."""
+
     def get(self, instance: object) -> Any:
         raise NotImplementedError()
 
     def check(self, hook: Hook) -> ProtocolCheckResult:
-        """ Only checks whether the instance has a Hook attribute and not if signatures match. """
+        """Only checks whether the instance has a Hook attribute and not if signatures match."""
         if isinstance(hook, Hook):
             sig = inspect.signature(getattr(hook.fn, '__func__', hook.fn))
 
             # Check argcount
-            proto_argcount = len([
-                param.name for param in self.signature.parameters.values()
-                if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
-            ])
+            proto_argcount = len(
+                [
+                    param.name
+                    for param in self.signature.parameters.values()
+                    if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
+                ]
+            )
             proto_varargs = any(param for param in self.signature.parameters.values() if param.kind == param.VAR_POSITIONAL)
 
-            func_argcount = len([
-                param.name for param in sig.parameters.values()
-                if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
-            ])
+            func_argcount = len(
+                [
+                    param.name
+                    for param in sig.parameters.values()
+                    if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD) and param.default is param.empty
+                ]
+            )
 
             # We do not care if the function takes less arguments, as this gets filtered in Hook.__call__
             if not proto_varargs and func_argcount > proto_argcount:
@@ -296,7 +316,8 @@ class ProtocolAttributeDoc:
 
 
 class ProtocolWrapper:
-    """ Transform an actual Protocol class in something more structured for runtime checking. """
+    """Transform an actual Protocol class in something more structured for runtime checking."""
+
     def __init__(self, protocol: type):
         self.annotations = tuple(self.get_annotations(protocol))
         self.methods = tuple(self.get_methods(protocol))
@@ -312,12 +333,7 @@ class ProtocolWrapper:
             for key, value in annotations.items():
                 if key not in EXCLUDED_ATTRIBUTES:
                     name = getattr(key, '__name__', key)
-                    yield ProtocolAnnotation(
-                        name=name,
-                        type=value,
-                        default=getattr(base, key, Missing),
-                        doc=None,
-                    )
+                    yield ProtocolAnnotation(name=name, type=value, default=getattr(base, key, Missing), doc=None)
 
     @staticmethod
     def get_methods(protocol: type) -> Iterator[ProtocolMethod]:
@@ -327,11 +343,7 @@ class ProtocolWrapper:
 
             for key, value in base.__dict__.items():
                 if key not in EXCLUDED_ATTRIBUTES and callable(value) and not isinstance(value, Hook):
-                    yield ProtocolMethod(
-                        name=key,
-                        signature=inspect.signature(value),
-                        doc=value.__doc__,
-                    )
+                    yield ProtocolMethod(name=key, signature=inspect.signature(value), doc=value.__doc__)
 
     @staticmethod
     def get_hooks(protocol: type) -> Iterator[ProtocolHook]:
@@ -341,15 +353,12 @@ class ProtocolWrapper:
 
             for key, value in base.__dict__.items():
                 if key not in EXCLUDED_ATTRIBUTES and isinstance(value, Hook):
-                    yield ProtocolHook(
-                        name=value.type,
-                        signature=inspect.signature(value),
-                        doc=value.__doc__,
-                    )
+                    yield ProtocolHook(name=value.type, signature=inspect.signature(value), doc=value.__doc__)
 
 
 class ProtocolChecker:
-    """ Combines different Protocol classes together and adds runtime checking and pretty printing. """
+    """Combines different Protocol classes together and adds runtime checking and pretty printing."""
+
     def __init__(self) -> None:
         self._protocols: dict[str, ProtocolWrapper] = {}
 
@@ -383,10 +392,10 @@ class ProtocolChecker:
     def __str__(self) -> str:
         return '\n'.join(str(t) for t in self.__str_generator())
 
-    def __rich_console__(self, console, options):       # type: ignore[no-untyped-def]
+    def __rich_console__(self, console, options):  # type: ignore[no-untyped-def]
         yield from self.__str_generator()
 
-    def __rich_measure__(self, console, options):       # type: ignore[no-untyped-def]
+    def __rich_measure__(self, console, options):  # type: ignore[no-untyped-def]
         return Measurement(4 + max(len(name) for name in self._protocols), options.max_width)
 
     def __str_generator(self) -> Iterator[TextLine]:
@@ -411,7 +420,7 @@ class ProtocolChecker:
                 yield TextLine('')
 
     def __getitem__(self, name: str) -> ProtocolAttributeDoc:
-        """ Prints documentation for various protocol items. """
+        """Prints documentation for various protocol items."""
         for protocol_name, protocol in self._protocols.items():
             for item in chain(protocol.annotations, protocol.methods, protocol.hooks):
                 if item.name == name:
@@ -420,7 +429,8 @@ class ProtocolChecker:
 
 
 class ProtocolCheckerInstance:
-    """ On the fly generated objects used for runtime checking of :class:`ProtocolChecker` objects. """
+    """On the fly generated objects used for runtime checking of :class:`ProtocolChecker` objects."""
+
     def __init__(self, protocol: ProtocolChecker, instance: Any):
         self.protocol = protocol
         self.instance = instance
@@ -431,13 +441,13 @@ class ProtocolCheckerInstance:
     def __rich__(self) -> str:
         return '\n'.join(t.__rich__() for t in self.__str_generator())
 
-    def __rich_console__(self, console, options):       # type: ignore[no-untyped-def]
+    def __rich_console__(self, console, options):  # type: ignore[no-untyped-def]
         yield from self.__str_generator()
 
-    def __rich_measure__(self, console, options):       # type: ignore[no-untyped-def]
+    def __rich_measure__(self, console, options):  # type: ignore[no-untyped-def]
         return self.protocol.__rich_measure__(console, options)
 
-    def __str_generator(self) -> Iterator[TextLine]:        # NOQA: C901 - Not sure splitting this function will make it "less" complex.
+    def __str_generator(self) -> Iterator[TextLine]:  # NOQA: C901 - Not sure splitting this function will make it "less" complex.
         yield TextLine('ProtocolChecker:', style='b')
 
         hook_types = {hook.name: hook for protocol in self.protocol._protocols.values() for hook in protocol.hooks}

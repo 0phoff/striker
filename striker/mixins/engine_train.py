@@ -14,6 +14,7 @@ class Train_EngineMixin(EngineMixin, protocol=ParentProtocol):
     """
     EngineMixin that keeps running through a dataset forever, which is mainly used for training.
     """
+
     @hooks.engine_begin
     def assert_name(self) -> None:
         assert self.name == 'train', f'{self.__class__.__name__} can only be used for training'

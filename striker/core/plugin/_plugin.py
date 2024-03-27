@@ -29,6 +29,7 @@ class PluginParent(BaseParent):
         ...         self.plugins.run(type='b', index=7)
         ...         self.plugins.run(type='c', kwargs={'extra': 123})
     """
+
     plugins: PluginManager
 
     def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
@@ -41,6 +42,7 @@ class Plugin(Base[PluginParent]):
     """
     TODO
     """
+
     def bind(self, parent: PluginParent) -> Plugin:
         return cast(Plugin, super().bind(parent))
 

@@ -30,7 +30,8 @@ class QuitPlugin(Plugin, protocol=ParentProtocol):
         We consider an exploding loss to be when the loss is infinite or NaN.
         This gets checked by running :meth:`~torch.Tensor.isinf` and :meth:`~toch.Tensor.isnan`.
     """
-    parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
+
+    parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
 
     def __init__(self, explode: bool = True):
         self.explode = explode

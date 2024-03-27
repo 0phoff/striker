@@ -33,7 +33,8 @@ class DataMixin(Mixin, ABC):
         >>> # Train a model on the testing data
         >>> mixin_data.train = 'test'
     """
-    parent: Engine      # Fix MyPy issues by setting a proper type of self.parent
+
+    parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
 
     @abstractmethod
     def get_dataloader(self, type: Literal['train', 'validation', 'test']) -> DataLoader[Any]:

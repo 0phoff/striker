@@ -8,7 +8,8 @@ striker.core.HookParent.__hook_check__ = 'raise'
 
 
 def test_api():
-    """ Test general mixin API """
+    """Test general mixin API"""
+
     class ParentProtocol(Protocol):
         value: int
         cd: int
@@ -49,7 +50,8 @@ def test_api():
 
 
 def test_protocol_fail():
-    """ Test that the code raises an error when protocol is not matched. """
+    """Test that the code raises an error when protocol is not matched."""
+
     class ParentProtocol(Protocol):
         doesnotexist: float
 
@@ -67,7 +69,8 @@ def test_protocol_fail():
 
 
 def test_multiple_parents():
-    """ Test that plugins work correctly when multiple PluginParent instances are created """
+    """Test that plugins work correctly when multiple PluginParent instances are created"""
+
     class CustomMixin(striker.core.Mixin, hook_types={'a'}):
         def __init__(self):
             self.value = 0
@@ -115,7 +118,8 @@ def test_multiple_parents():
 
 
 def test_inheritance_mixin():
-    """ Test that plugins work correctly when it is inherited """
+    """Test that plugins work correctly when it is inherited"""
+
     class ParentMixin(striker.core.Mixin, hook_types={'a'}):
         def __init__(self):
             self.value = 0

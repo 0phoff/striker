@@ -19,6 +19,7 @@ class Test_EngineMixin(EngineMixin):
     """
     EngineMixin that runs through a dataloader once, which is mainly used for testing and validation.
     """
+
     def __set_name__(self, owner: Any, name: str) -> None:
         super().__set_name__(owner, name)
         if self.name == 'validation':

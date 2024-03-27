@@ -23,6 +23,7 @@ class HookFactory:
         ...     # Runs at the end of every 100th batch
         ...     pass
     """
+
     __instance: Optional[HookFactory] = None
 
     def __new__(cls: type[Self]) -> Self:
