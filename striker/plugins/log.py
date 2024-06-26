@@ -23,30 +23,40 @@ class LogPlugin(Plugin, protocol=ParentProtocol):
     Args:
         file_mode: How to open the log file. Default **'a'**
         file_level: Filter level for the logging file; Default **0**
-        rich_enable: Wether to enabled the :class:`~rich.logging.RichHandler` if it is available; Default **true**
+        rich_enable: Wether to enabled the :class:`~rich.logging.RichHandler` if it is available; Default **True**
         rich_level: Filter level for the :class:`~rich.logging.RichHandler`; Default **INFO**
+        clean_up: Whether to remove the installed logging handlers when the Engine gets destroyed; Default **True**
     """
 
     parent: Engine  # Fix MyPy issues by setting a proper type of self.parent
 
     def __init__(
-        self, file_mode: Literal['a', 'w'] = 'a', file_level: int = logging.NOTSET, rich_enable: bool = True, rich_level: int = logging.INFO
+        self,
+        file_mode: Literal['a', 'w'] = 'a',
+        file_level: int = logging.NOTSET,
+        rich_enable: bool = True,
+        rich_level: int = logging.INFO,
+        clean_up: bool = True,
     ):
         self.file_mode = file_mode
         self.file_level = file_level
         self.rich_enable = rich_enable
         self.rich_level = rich_level
+        self.clean_up = clean_up
 
-    @hooks.engine_init
+    @hooks.engine_init.set_early()
     def setup_handlers(self) -> None:
         # We can only setup the filehandler after the Engine is created, as we need Engine.log_file
         handlers = (self.setup_filehandler(), self.setup_streamhandler())
-        filtered_handlers = tuple(h for h in handlers if h is not None)
-        if len(filtered_handlers):
-            logging.basicConfig(force=True, level=logging.NOTSET, handlers=filtered_handlers)
+        self.handlers = tuple(h for h in handlers if h is not None)
+        if len(self.handlers):
+            logging.basicConfig(force=True, level=logging.NOTSET, handlers=self.handlers)
 
-        # Optimization: We can safely disable this plugin, as there are no further hooks to run.
-        self.enabled = False
+    @hooks.engine_del.set_late()
+    def remove_handlers(self) -> None:
+        if self.clean_up:
+            for h in self.handlers:
+                logging.root.removeHandler(h)
 
     def setup_streamhandler(self) -> Optional[logging.Handler]:
         if not self.rich_enable:

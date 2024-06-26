@@ -81,6 +81,9 @@ class Engine(HookParent, PluginParent, MixinParent, protocol=ParentProtocol):
         self.__init_done = True
         self.run_hook(type='engine_init')
 
+    def __del__(self):
+        self.run_hook(type='engine_del')
+
     def train(self) -> None:
         self.__check()
         self.__entry__ = 'train'
