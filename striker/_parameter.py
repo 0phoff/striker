@@ -562,9 +562,9 @@ class VolatileSetter:
             return
 
         setattr(self.p, name, value)
-        self.p.__volatile.add(name)
+        self.p._Parameters__volatile.add(name)
 
     def __delattr__(self, name: str) -> None:
         if name not in self.p.__volatile:
             log.error('%s was not marked as a volatile parameter', name)
-        self.p.__volatile.discard(name)
+        self.p._Parameters__volatile.discard(name)
