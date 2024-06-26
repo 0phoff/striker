@@ -20,44 +20,42 @@ log = logging.getLogger(__name__)
 
 class Parameters:
     """
-    TODO
+    Glorified dictionary that is used to store training parameters.
+    Contains logic to serialize parameters to a file and automatic casting of arguments, based on type hints (usefull for CLI).
     """
 
     __cast: bool = False
-    __init_done: bool = False
     __on_load: Optional[Callable[[Parameters], None]]
     __automatic: dict[str, Any] = {'epoch': 0, 'batch': 0}
-    __skip_serialize: list[str] = [
+    __internal: list[str] = [
         '_Parameters__cast',
-        '_Parameters__init_done',
         '_Parameters__on_load',
         '_Parameters__automatic',
-        '_Parameters__no_serialize',
+        '_Parameters__volatile',
     ]
 
     def __init__(self, **kwargs: Any):
         for key, value in self.__automatic.items():
             setattr(self, key, value)
 
-        self.__no_serialize: list[str] = []
+        self.__volatile: set[str] = set()
         for key in kwargs:
             if key.startswith('_'):
-                serialize = False
+                volatile = True
                 val = kwargs[key]
                 key = key[1:]
             else:
-                serialize = True
+                volatile = False
                 val = kwargs[key]
 
             if not hasattr(self, key):
                 setattr(self, key, val)
-                if not serialize:
-                    self.__no_serialize.append(key)
+                if volatile:
+                    self.__volatile.add(key)
             else:
                 log.error('%s attribute already exists as a Parameter and will not be overwritten', key)
 
         self.__on_load = None
-        self.__init_done = True
 
     def save(self, filename: Union[Path, str], *keys: str) -> None:
         """
@@ -67,19 +65,19 @@ class Parameters:
 
         Args:
             filename (str or path): File to store the hyperparameters
-            *keys (str): Which items to store (Default: store all keys that are not in ``self.__no_serialize``)
+            *keys (str): Which items to store (Default: store all keys that are not in ``self.__volatile``)
 
         Note:
             This function will first check if the existing attributes have a `state_dict()` function,
             in which case it will use this function to get the values needed to save.
 
         Warning:
-            If you pass keys to save, this function will not check whether these keys are in the ``self.__no_serialize`` list.
+            If you pass keys to save, this function will not check whether these keys are in the ``self.__volatile`` list.
         """
         state = {}
 
         if not len(keys):
-            keys = tuple(k for k in vars(self) if k not in self.__no_serialize and k not in self.__skip_serialize)
+            keys = tuple(k for k in vars(self) if k not in self.__volatile and k not in self.__internal)
 
         for k in keys:
             v = vars(self)[k]
@@ -114,10 +112,10 @@ class Parameters:
         state = torch.load(filename, 'cpu')
 
         if not len(keys):
-            keys = tuple(k for k in state if k not in self.__skip_serialize)
+            keys = tuple(k for k in state if k not in self.__internal)
 
         for k in keys:
-            if k not in state:
+            if k not in state and k not in self.__volatile:
                 log.error('Key "%s" is not present in loaded state from "%s"', k, filename)
 
             v = state[k]
@@ -152,7 +150,8 @@ class Parameters:
         self.__on_load = func
 
     def get(self, name: str, default: Optional[Any] = None) -> Any:
-        """Recursively drill down into objects stored on Parameters and get a value.
+        """
+        Recursively drill down into objects stored on Parameters and get a value.
         This item will recursively use ``getattr` to get an item from this object, and return the default value otherwise.
 
         If one of the intermediate objects is a dictionary we use ``obj[attr]``.
@@ -188,30 +187,6 @@ class Parameters:
         """Returns the attribute keys and values of your Parameters object, similar to a python dictionary."""
         return ((k, getattr(self, k)) for k in self.keys())
 
-    def __getattr__(self, item: str) -> Any:
-        """Allow to fetch items with the underscore."""
-        if item[0] == '_' and item[1:] in self.__no_serialize:  # NOQA: SIM106 - It makes no sense to handle error first
-            return getattr(self, item[1:])
-        raise AttributeError(f"'Parameters' object has no attribute '{item}'")
-
-    def __setattr__(self, item: str, value: Any) -> None:
-        """
-        Store extra variables in this container class.
-
-        This custom function allows to store objects after creation and mark whether are not you want to serialize them,
-        by prefixing them with an underscore.
-        """
-        if item in self.__dict__ or not self.__init_done:
-            super().__setattr__(item, value)
-        elif item[0] == '_':
-            if item[1:] not in self.__dict__:
-                self.__no_serialize.append(item[1:])
-            elif item[1:] not in self.__no_serialize:
-                raise AttributeError(f'{item[1:]} already stored in this object as serializable value!')
-            super().__setattr__(item[1:], value)
-        else:
-            super().__setattr__(item, value)
-
     def __repr__(self) -> str:
         """
         Print all values stored in the object as repr.
@@ -227,7 +202,7 @@ class Parameters:
             valrepr = repr(val)
             if '\n' in valrepr:
                 valrepr = valrepr.replace('\n', '\n    ')
-            if k in self.__no_serialize:
+            if k in self.__volatile:
                 k += '*'
 
             s += f'\n  {k} = {valrepr}'
@@ -249,7 +224,7 @@ class Parameters:
             valrepr = str(val)
             if '\n' in valrepr:
                 valrepr = getattr(val, '__name__', val.__class__.__name__)
-            if k in self.__no_serialize:
+            if k in self.__volatile:
                 k += '*'
 
             s += f'\n  {k} = {valrepr}'
@@ -286,7 +261,7 @@ class Parameters:
 
         for key in other:
             if not hasattr(self, key):
-                nkey = f'_{key}' if key in other.__no_serialize else key
+                nkey = f'_{key}' if key in other.__volatile else key
                 setattr(self, nkey, getattr(other, key))
             elif key not in Parameters.__automatic:
                 log.warning('"%s" is available in both Parameters, keeping first', key)
@@ -305,6 +280,19 @@ class Parameters:
     def __iter__(self) -> Iterator[str]:
         """Return an iterator of :func:`~striker.Parameters.keys()`, so we can loop over this object like a python dictionary."""
         return iter(self.keys())
+
+    @property
+    def volatile(self):
+        """
+        This property allows you to mark some data as being volatile, which means it will not be saved by default.
+
+        Example:
+            >>> params = striker.Parameters()
+            >>> p.learning_rate = 1e-3      # This will be stored to disk
+            >>> p.volatile.batch_size = 32  # This will NOT be stored to disk
+            >>> del p.volatile.batch_size   # After this line, batch_size will be stored to disk
+        """
+        return VolatileSetter(self)
 
     @classmethod
     def from_file(cls, filename: Union[Path, str], variable: str = 'params', **kwargs: Any) -> Parameters:
@@ -556,3 +544,27 @@ def cast_arg(param: str, cast_type: type) -> Any:  # NOQA: C901 - This function 
     # Any other
     log.error('Unkown type "%s", cannot convert! Simply returning string', cast_type)
     return param
+
+
+class VolatileSetter:
+    """
+    Store attribute on Parameters object and mark it as volatile.
+    """
+
+    __slots__ = ('p',)
+
+    def __init__(self, parameters: Parameters):
+        self.p = parameters
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == 'p':
+            super().__setattr__(name, value)
+            return
+
+        setattr(self.p, name, value)
+        self.p.__volatile.add(name)
+
+    def __delattr__(self, name: str) -> None:
+        if name not in self.p.__volatile:
+            log.error('%s was not marked as a volatile parameter', name)
+        self.p.__volatile.discard(name)
