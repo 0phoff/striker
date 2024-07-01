@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Literal, Optional, Protocol, Union
+from typing import Any, List, Literal, Optional, Protocol, Union
 
 from .._engine import Engine
 from ..core import Plugin, hooks
@@ -13,7 +13,7 @@ class ParentProtocol(Protocol):
     backup_folder: Optional[Union[str, Path]] = None
     """ Folder where we store backups. """
 
-    backup_rate: Optional[Union[list[Union[int, slice]], int, slice]] = None
+    backup_rate: Optional[Union[List[Union[int, slice]], int, slice]] = None
     """
     When to store backups.
 

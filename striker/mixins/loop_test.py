@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Optional, Protocol
+from typing import Any, Iterator, List, Optional, Protocol
 
 from torch.utils.data import DataLoader
 
@@ -25,7 +25,7 @@ def dynamic_parent_protocol(name: str, infer: str, post: str) -> Any:
         """
         pass
 
-    def _post(self: Any, output: list[Any]) -> Any:
+    def _post(self: Any, output: List[Any]) -> Any:
         """
         Post-processing of the network output.
 

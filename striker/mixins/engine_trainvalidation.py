@@ -1,5 +1,5 @@
 import logging
-from typing import Literal, Protocol, Union, cast
+from typing import List, Literal, Protocol, Union, cast
 
 from ..core import EngineMixin, Hook, hooks
 from .engine_train import Train_EngineMixin
@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 class ParentProtocol(Train_EngineMixin.__protocol__, Protocol):  # type: ignore
-    validation_rate: Union[list[Union[int, slice]], int, slice, None] = slice(None, None, 1)
+    validation_rate: Union[List[Union[int, slice]], int, slice, None] = slice(None, None, 1)
     """
     When to run the validation.
 
