@@ -28,6 +28,13 @@ class ParentProtocol(Protocol):
         """
         ...
 
+    @hooks.engine_del
+    def engine_del(self) -> None:
+        """
+        TODO
+        """
+        ...
+
     @hooks.engine_begin
     def engine_begin(self, entry: Literal['train', 'test', 'validation']) -> None:
         """
