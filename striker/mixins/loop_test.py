@@ -55,6 +55,9 @@ def dynamic_parent_protocol(name: str, infer: str, post: str) -> Any:
 
         Args:
             batch: Number of the batch we start.
+
+        Note:
+            The ``batch`` argument is equal to ``self.batch + 1``, as the ``self.batch`` variable shows the number of completed batches.
         """
 
     def batch_end(self: Any, batch: int, output: Any) -> None:
