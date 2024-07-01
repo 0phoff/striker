@@ -8,6 +8,11 @@ import logging
 import sys
 import time
 
+try:
+    from ipykernel.iostream import OutStream
+except ImportError:
+    OutStream = None
+
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, ProgressColumn, TextColumn, filesize  # type: ignore[attr-defined]
 from rich.table import Column
 from rich.text import Text
@@ -52,7 +57,7 @@ class ProgressBarPlugin(Plugin, protocol=ParentProtocol):
     PRINT_TOTAL_MAX: int = 10 * 60 * 60
 
     def __init__(self) -> None:
-        self.tty = sys.stdout.isatty()
+        self.tty = sys.stdout.isatty() or (OutStream is not None and isinstance(sys.stdout, OutStream))
 
     @hooks.engine_begin
     def start_progress(self, entry: Literal['train', 'test', 'validation']) -> None:
