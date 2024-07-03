@@ -75,8 +75,8 @@ class Engine(HookParent, PluginParent, MixinParent, protocol=ParentProtocol):
         # Quit handling
         self.__sigint__ = False
         self.__quit__ = False
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            signal.signal(sig, self.__interrupt)
+        self.__default_sigint = signal.signal(signal.SIGINT, self.__interrupt)
+        self.__default_sigterm = signal.signal(signal.SIGTERM, self.__interrupt)
 
         # Set attributes
         for key in kwargs:
@@ -90,6 +90,8 @@ class Engine(HookParent, PluginParent, MixinParent, protocol=ParentProtocol):
 
     def __del__(self):
         self.run_hook(type='engine_del')
+        signal.signal(signal.SIGINT, self.__default_sigint)
+        signal.signal(signal.SIGINT, self.__default_sigterm)
 
     def train(self) -> None:
         self.__check()
