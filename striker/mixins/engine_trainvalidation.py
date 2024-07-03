@@ -39,8 +39,16 @@ class TrainValidation_EngineMixin(Train_EngineMixin, protocol=ParentProtocol):
 
     def __call__(self) -> None:
         super().__call__()
-        if isinstance(self.run_validation, Hook):
-            # If final epoch/batch is in validation_rate, it still gets cancelled because `self.quit == True`
+
+        # Run final validation if it was not run at the end of that batch/epoch
+        if (
+            isinstance(self.run_validation, Hook)
+            and self.run_validation.enabled
+            and not (
+                self.run_validation.is_active(type='train_batch_end', index=self.parent.batch)
+                or self.run_validation.is_active(type='train_epoch_end', index=self.parent.epoch)
+            )
+        ):
             log.info('Running final validation...')
             self.run_validation()
 
