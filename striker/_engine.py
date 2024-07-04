@@ -91,7 +91,7 @@ class Engine(HookParent, PluginParent, MixinParent, protocol=ParentProtocol):
     def __del__(self):
         self.run_hook(type='engine_del')
         signal.signal(signal.SIGINT, self.__default_sigint if self.__default_sigint is not None else signal.SIG_DFL)
-        signal.signal(signal.SIGINT, self.__default_sigterm if self.__default_sigterm is not None else signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, self.__default_sigterm if self.__default_sigterm is not None else signal.SIG_DFL)
 
     def train(self) -> None:
         self.__check()
