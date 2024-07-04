@@ -49,6 +49,7 @@ class TrainValidation_EngineMixin(Train_EngineMixin, protocol=ParentProtocol):
                 or self.run_validation.is_active(type='train_epoch_end', index=self.parent.epoch)
             )
         ):
+            _ = self.quit  # Read quit property to force reset state
             log.info('Running final validation...')
             self.run_validation()
 
