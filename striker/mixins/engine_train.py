@@ -20,9 +20,6 @@ class Train_EngineMixin(EngineMixin, protocol=ParentProtocol):
         assert self.name == 'train', f'{self.__class__.__name__} can only be used for training'
 
     def __call__(self) -> None:
-        if self.quit:
-            return
-
         while True:
             if self.quit:
                 return
@@ -34,6 +31,3 @@ class Train_EngineMixin(EngineMixin, protocol=ParentProtocol):
                     return
 
             del self.parent.mixin_loop_train.dataloader
-
-            if self.quit:
-                return
